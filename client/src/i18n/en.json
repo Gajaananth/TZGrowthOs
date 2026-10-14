@@ -1,0 +1,31 @@
+{
+  "appName": "Tradiq Zium GrowthOS",
+  "tagline": "AI Retail Growth & Marketing Assistant",
+  "nav": {
+    "growthPlan": "Today's Growth Plan",
+    "products": "My Products",
+    "priorities": "What to Promote",
+    "campaigns": "Campaigns & Approvals",
+    "seo": "SEO Helper",
+    "results": "Results & Insights",
+    "chat": "Ask GrowthOS",
+    "festivals": "Festivals",
+    "settings": "Settings",
+    "signOut": "Sign Out"
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back, Retailer",
+    "loginSubtitle": "Sign in to manage your promotions, campaigns, and retail growth",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "signInBtn": "Sign In to GrowthOS",
+    "createAccountLink": "New retail business? Create account",
+    "registerTitle": "Register Your Retail Business",
+    "registerSubtitle": "Start growing your sales with intelligent AI recommendations",
+    "storeNameLabel": "Store / Business Name",
+    "storeTypeLabel": "Business Category",
+    "cityLabel": "City / Location in Sri Lanka",
+    "registerBtn": "Create Business Account",
+    "alreadyHaveAccount": "Already registered? Sign in here"
+  }
+}

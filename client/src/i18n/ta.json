@@ -1,0 +1,31 @@
+{
+  "appName": "Tradiq Zium GrowthOS",
+  "tagline": "சில்லறை வணிக வளர்ச்சி AI உதவியாளர்",
+  "nav": {
+    "growthPlan": "இன்றைய வளர்ச்சித் திட்டம்",
+    "products": "எனது தயாரிப்புகள்",
+    "priorities": "எதை விளம்பரப்படுத்த வேண்டும்?",
+    "campaigns": "பிரச்சாரங்கள் & ஒப்புதல்கள்",
+    "seo": "SEO உதவியாளர்",
+    "results": "முடிவுகள் & நுண்ணறிவு",
+    "chat": "GrowthOS-டம் கேட்கவும்",
+    "festivals": "பண்டிகை நாட்காட்டி",
+    "settings": "அமைப்புகள்",
+    "signOut": "வெளியேறு"
+  },
+  "auth": {
+    "welcomeBack": "மீண்டும் வருக",
+    "loginSubtitle": "உங்கள் வணிக விளம்பரங்களை நிர்வகிக்க உள்நுழையவும்",
+    "emailLabel": "மின்னஞ்சல் (Email)",
+    "passwordLabel": "கடவுச்சொல் (Password)",
+    "signInBtn": "GrowthOS-ல் உள்நுழைக",
+    "createAccountLink": "புதிய வணிகமா? கணக்கை உருவாக்கவும்",
+    "registerTitle": "உங்கள் சில்லறை வணிகத்தைப் பதிவு செய்க",
+    "registerSubtitle": "AI பரிந்துரைகளுடன் உங்கள் விற்பனையை அதிகரிக்கவும்",
+    "storeNameLabel": "வணிகத்தின் பெயர்",
+    "storeTypeLabel": "வணிகப் பிரிவு",
+    "cityLabel": "நகரம் / பகுதி",
+    "registerBtn": "கணக்கை உருவாக்கவும்",
+    "alreadyHaveAccount": "ஏற்கனவே கணக்கு உள்ளதா? உள்நுழையவும்"
+  }
+}

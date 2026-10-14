@@ -1,0 +1,31 @@
+{
+  "appName": "Tradiq Zium GrowthOS",
+  "tagline": "සිල්ලර වෙළඳ වර්ධන AI සහයකයා",
+  "nav": {
+    "growthPlan": "අද දවසේ වර්ධන සැලැස්ම",
+    "products": "මගේ භාණ්ඩ",
+    "priorities": "ප්‍රවර්ධනය කළ යුත්තේ මොනවාද?",
+    "campaigns": "ව්‍යාපාර සහ අනුමැතිය",
+    "seo": "SEO සහයකයා",
+    "results": "ප්‍රතිඵල සහ අවබෝධය",
+    "chat": "GrowthOS ගෙන් අසන්න",
+    "festivals": "උත්සව දින දර්ශනය",
+    "settings": "සැකසුම්",
+    "signOut": "ඉවත් වන්න"
+  },
+  "auth": {
+    "welcomeBack": "නැවත සාදරයෙන් පිළිගනිමු",
+    "loginSubtitle": "ඔබේ සිල්ලර ව්‍යාපාරයේ ප්‍රවර්ධන කළමනාකරණයට පිවිසෙන්න",
+    "emailLabel": "විද්‍යුත් තැපෑල (Email)",
+    "passwordLabel": "මුරපදය (Password)",
+    "signInBtn": "GrowthOS වෙත පිවිසෙන්න",
+    "createAccountLink": "නව ව්‍යාපාරයක්ද? ගිණුමක් සාදන්න",
+    "registerTitle": "ඔබගේ ව්‍යාපාරය ලියාපදිංචි කරන්න",
+    "registerSubtitle": "AI මාර්ගෝපදේශ සමඟ ඔබේ අලෙවිය වැඩි දියුණු කරගන්න",
+    "storeNameLabel": "ව්‍යාපාරයේ නම",
+    "storeTypeLabel": "ව්‍යාපාර වර්ගය",
+    "cityLabel": "නගරය / ප්‍රදේශය",
+    "registerBtn": "ගිණුම සාදන්න",
+    "alreadyHaveAccount": "දැනටමත් ගිණුමක් තිබේද? පිවිසෙන්න"
+  }
+}
