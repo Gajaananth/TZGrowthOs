@@ -71,22 +71,36 @@ body {
 }
 
 /* Responsive Shell Breakpoints */
-@media (min-width: 769px) {
+@media (min-width: 1024px) {
+  .mobile-nav-toggle {
+    display: none !important;
+  }
   .mobile-tab-bar {
     display: none !important;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .sidebar-desktop {
+    display: none !important;
+  }
+  .mobile-nav-toggle {
+    display: inline-flex !important;
+  }
+}
+
+/* Tablet (641px - 1023px): clean workspace with top drawer, no bottom bar needed */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .mobile-tab-bar {
     display: none !important;
   }
 }
 
-/* App Shell Layout */
+/* App Shell Layout (using dynamic viewport units dvh for mobile address bar stability) */
 .app-container {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .main-content {
@@ -96,34 +110,51 @@ body {
   min-width: 0;
   overflow-y: auto;
   height: 100vh;
+  height: 100dvh;
 }
 
 .page-container {
   padding: 2rem;
-  max-width: 1300px;
+  max-width: 1320px;
   margin: 0 auto;
   width: 100%;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 641px) and (max-width: 1023px) {
   .page-container {
-    padding: 1rem;
-    padding-bottom: 5rem; /* space for mobile bottom tab bar */
+    padding: 1.25rem 1.5rem;
+    padding-bottom: 2.5rem;
   }
 }
 
-/* Typography Helpers */
+@media (max-width: 640px) {
+  .page-container {
+    padding: 0.875rem 0.75rem;
+    padding-bottom: max(5.5rem, calc(env(safe-area-inset-bottom, 20px) + 4.5rem)); /* safe margin for mobile bottom tab bar */
+  }
+}
+
+/* Responsive Typography with clamp */
 .title-hero {
-  font-size: 1.875rem;
+  font-size: clamp(1.35rem, 1rem + 1.8vw, 2rem);
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .subtitle-hero {
-  font-size: 1rem;
+  font-size: clamp(0.825rem, 0.75rem + 0.4vw, 0.975rem);
   color: var(--text-muted);
   margin-top: 0.25rem;
+  line-height: 1.5;
+}
+
+/* Responsive hero grid */
+.growth-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: clamp(0.875rem, 2vw, 1.5rem);
 }
 
 /* Cards & Surfaces */
@@ -322,26 +353,32 @@ body {
   background-color: #fafbfc;
 }
 
-/* Grid Layouts */
+/* Grid Layouts with fine-tuned breakpoints for Mobile, Tablet, Laptop, and Desktop */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
+  gap: clamp(0.875rem, 2vw, 1.5rem);
 }
 
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.5rem;
+  gap: clamp(0.875rem, 2vw, 1.5rem);
 }
 
 .grid-4 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.25rem;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) and (min-width: 1024px) {
+  .grid-4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) and (min-width: 641px) {
   .grid-3, .grid-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -350,5 +387,17 @@ body {
 @media (max-width: 640px) {
   .grid-2, .grid-3, .grid-4 {
     grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+  .card {
+    padding: 1rem;
+    border-radius: 0.875rem;
+  }
+}
+
+/* Touch Friendly Tap Targets */
+@media (hover: none) and (pointer: coarse) {
+  .btn, .form-input, .form-select {
+    min-height: 42px;
   }
 }

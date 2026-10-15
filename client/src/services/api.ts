@@ -318,3 +318,343 @@ export async function fetchGrowthPlan() {
     error?: string;
   }>('/strategist/plan');
 }
+
+// ─── Phase 4: Campaigns & Assets ─────────────────────────────
+
+export type CampaignStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED';
+
+export interface CaptionSet {
+  en: string;
+  si: string;
+  ta: string;
+  singlish: string;
+  tanglish: string;
+}
+
+export interface SensitivityVerdict {
+  passed: boolean;
+  flags: string[];
+  suggestions: string[];
+  overall_verdict: string;
+}
+
+export interface ContentAsset {
+  id: string;
+  campaign_id: string;
+  asset_type: 'CAPTION' | 'HASHTAGS' | 'POSTER_CONCEPT' | 'IMAGE_PROMPT';
+  platform: string;
+  language: string;
+  body: string;
+  needs_native_review: boolean;
+  is_confirmed: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApprovalEvent {
+  id: string;
+  campaign_id: string;
+  user_id: string;
+  user_email?: string;
+  action: 'CREATED' | 'GENERATED' | 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED' | 'ASSET_EDITED' | 'NATIVE_CONFIRMED';
+  note?: string;
+  created_at: string;
+}
+
+export interface Campaign {
+  id: string;
+  business_id: string;
+  product_id: string;
+  product_name: string;
+  product_category: string;
+  product_price_lkr: number | string;
+  product_description?: string;
+  festival_id?: string | null;
+  festival_name?: string | null;
+  festival_rules?: string | string[];
+  objective: string;
+  platforms: string | string[];
+  status: CampaignStatus;
+  approved_at?: string | null;
+  asset_count?: number;
+  has_pending_native_review?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchCampaigns() {
+  return apiRequest<{ success: boolean; campaigns: Campaign[]; error?: string }>('/campaigns');
+}
+
+export async function fetchCampaign(id: string) {
+  return apiRequest<{
+    success: boolean;
+    campaign: Campaign;
+    assets: ContentAsset[];
+    approvalEvents: ApprovalEvent[];
+    error?: string;
+  }>(`/campaigns/${id}`);
+}
+
+export async function createCampaign(data: {
+  product_id: string;
+  festival_id?: string | null;
+  objective?: string;
+  platforms?: string[];
+}) {
+  return apiRequest<{ success: boolean; campaign: Campaign; error?: string }>('/campaigns', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function generateCampaignAssets(id: string) {
+  return apiRequest<{
+    success: boolean;
+    message: string;
+    status: string;
+    assets: ContentAsset[];
+    sensitivity: SensitivityVerdict;
+    error?: string;
+  }>(`/campaigns/${id}/generate`, { method: 'POST' });
+}
+
+export async function approveCampaign(id: string, note?: string) {
+  return apiRequest<{ success: boolean; message: string; campaign: Campaign; error?: string }>(
+    `/campaigns/${id}/approve`,
+    { method: 'POST', body: JSON.stringify({ note }) }
+  );
+}
+
+export async function rejectCampaign(id: string, reason?: string) {
+  return apiRequest<{ success: boolean; message: string; campaign: Campaign; error?: string }>(
+    `/campaigns/${id}/reject`,
+    { method: 'POST', body: JSON.stringify({ reason }) }
+  );
+}
+
+export async function requestCampaignChanges(id: string, note?: string) {
+  return apiRequest<{ success: boolean; message: string; campaign: Campaign; error?: string }>(
+    `/campaigns/${id}/request-changes`,
+    { method: 'POST', body: JSON.stringify({ note }) }
+  );
+}
+
+export async function updateAsset(assetId: string, body: string) {
+  return apiRequest<{ success: boolean; asset: ContentAsset; error?: string }>(
+    `/assets/${assetId}`,
+    { method: 'PUT', body: JSON.stringify({ body }) }
+  );
+}
+
+export async function confirmNativeReview(assetId: string) {
+  return apiRequest<{ success: boolean; asset: ContentAsset; error?: string }>(
+    `/assets/${assetId}/confirm-native`,
+    { method: 'POST' }
+  );
+}
+
+// ─── Phase 5: SEO Helper ──────────────────────────────────────
+
+export interface KeywordItem {
+  keyword: string;
+  trend_badge: 'TRENDING_NOW' | 'HIGH_VOLUME' | 'LOCAL_INTENT' | 'SEASONAL_BOOST' | 'LONG_TAIL' | string;
+  trend_reason: string;
+  competition?: 'LOW' | 'MEDIUM' | 'HIGH' | string;
+}
+
+export interface HashtagItem {
+  tag: string;
+  recommendation_level: 'MUST_USE' | 'RECOMMENDED' | 'NICHE' | string;
+  reason: string;
+}
+
+export interface LanguagePack {
+  meta_title: string;
+  meta_description: string;
+  captions: string[];
+  keywords: KeywordItem[];
+  hashtags: HashtagItem[];
+}
+
+export interface SeoOutput {
+  meta_title: string;
+  meta_description: string;
+  local_keywords: string[];
+  gmb_description: string;
+  gmb_posts: string[];
+  schema_snippet: string;
+  tips: string[];
+  current_season_trend?: string;
+  best_tags_advice?: string;
+  languages?: {
+    en: LanguagePack;
+    si: LanguagePack;
+    ta: LanguagePack;
+    singlish: LanguagePack;
+    tanglish: LanguagePack;
+  };
+}
+
+export async function generateSeoPack(productId: string) {
+  return apiRequest<{
+    success: boolean;
+    product: { id: string; name: string };
+    seo: SeoOutput;
+    aiMeta?: {
+      tokensIn: number;
+      tokensOut: number;
+      totalTokens: number;
+      latencyMs: number;
+      model: string;
+    };
+    error?: string;
+  }>('/seo/generate', {
+    method: 'POST',
+    body: JSON.stringify({ product_id: productId }),
+  });
+}
+
+export interface AiRunLogItem {
+  id: string;
+  feature: string;
+  model: string;
+  latency_ms: number;
+  success: boolean;
+  tokens_in: number;
+  tokens_out: number;
+  total_tokens: number;
+  error_message?: string;
+  created_at: string;
+}
+
+export interface AiFeatureStats {
+  feature: string;
+  call_count?: number;
+  calls?: number;
+  tokens_in: number;
+  tokens_out: number;
+  total_tokens: number;
+  avg_latency_ms: number;
+}
+
+export interface TokenUsageData {
+  totalCalls: number;
+  successfulCalls: number;
+  totalTokensIn: number;
+  totalTokensOut: number;
+  totalTokens: number;
+  avgLatencyMs: number;
+  costUsd: number;
+  costLkr: number;
+  model: string;
+  byFeature: AiFeatureStats[];
+  recentRuns: AiRunLogItem[];
+}
+
+// ─── Phase 5: Insights ────────────────────────────────────────
+
+export interface InsightsSummary {
+  business: { name: string; city: string; type: string };
+  catalog: {
+    totalProducts: number;
+    totalStockUnits: number;
+    catalogValueLkr: number;
+    outOfStockCount: number;
+    lowStockCount: number;
+  };
+  campaigns: {
+    total: number;
+    approved: number;
+    inReview: number;
+    draft: number;
+    rejected: number;
+  };
+  assets: { total: number; captions: number; confirmed: number };
+  ai: {
+    totalCallsLast30Days: number;
+    successfulCalls?: number;
+    totalTokensIn?: number;
+    totalTokensOut?: number;
+    totalTokens?: number;
+    avgLatencyMs?: number;
+    featureBreakdown: Record<string, number>;
+    featuresDetailed?: AiFeatureStats[];
+    recentRuns?: AiRunLogItem[];
+  };
+  priorities: { distribution: Record<string, number>; topProducts: any[] };
+  recentApproved: any[];
+}
+
+export async function fetchInsightsSummary() {
+  return apiRequest<{ success: boolean; summary: InsightsSummary; error?: string }>(
+    '/insights/summary'
+  );
+}
+
+export async function fetchTokenUsage() {
+  return apiRequest<{ success: boolean; tokens: TokenUsageData; error?: string }>(
+    '/insights/tokens'
+  );
+}
+
+// ─── Phase 5: Chat ────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  action_items: string[];
+  related_products: string[];
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export async function sendChatMessage(
+  question: string,
+  history: Array<{ role: 'user' | 'assistant'; content: string }> = []
+) {
+  return apiRequest<{
+    success: boolean;
+    response: ChatResponse;
+    aiMeta?: {
+      tokensIn: number;
+      tokensOut: number;
+      totalTokens: number;
+      latencyMs: number;
+      model: string;
+    };
+    error?: string;
+  }>(
+    '/chat/message',
+    {
+      method: 'POST',
+      body: JSON.stringify({ question, history }),
+    }
+  );
+}
+
+// ─── Phase 6: Settings & Demo Utilities ──────────────────────
+
+export async function updateBusinessProfile(data: {
+  name?: string;
+  business_type?: string;
+  city?: string;
+  brand_tone?: string;
+  default_language?: string;
+}) {
+  return apiRequest<{ success: boolean; business: any; error?: string }>(
+    '/auth/business',
+    {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+
+

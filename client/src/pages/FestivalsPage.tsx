@@ -17,8 +17,10 @@ import {
   Festival,
 } from '../services/api';
 import EmptyState from '../components/EmptyState';
+import { useI18n } from '../context/I18nContext';
 
 export const FestivalsPage: React.FC = () => {
+  const { t } = useI18n();
   const [festivals, setFestivals] = useState<Festival[]>([]);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -106,10 +108,10 @@ export const FestivalsPage: React.FC = () => {
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.75rem' }}>📅</span>
-          <h1 className="title-hero">Sri Lankan Cultural Festival Calendar</h1>
+          <h1 className="title-hero">{t('festivals.title')}</h1>
         </div>
         <p className="subtitle-hero">
-          Sri Lankan holidays drive major retail purchasing cycles. Festival dates are never guessed by AI — you confirm exact dates and Nekath timings.
+          {t('festivals.subtitle')}
         </p>
       </div>
 
@@ -127,7 +129,7 @@ export const FestivalsPage: React.FC = () => {
       >
         <Sparkles size={24} color="#059669" style={{ flexShrink: 0 }} />
         <div style={{ fontSize: '0.875rem', color: '#065f46' }}>
-          <strong>Automated Festival Boost:</strong> Products in boosted categories automatically receive up to <strong>+30 priority points</strong> during the promotion window (14–21 days prior). Confirming exact holiday dates increases scoring accuracy.
+        <strong>{t('festivals.infoBannerHeading')}</strong> {t('festivals.infoBannerBody')}
         </div>
       </div>
 
@@ -145,13 +147,13 @@ export const FestivalsPage: React.FC = () => {
               margin: '0 auto 1rem',
             }}
           />
-          Loading cultural calendar...
+          {t('festivals.loading')}
         </div>
       ) : festivals.length === 0 ? (
         <EmptyState
           icon={<Calendar size={28} />}
-          title="No festivals found"
-          description="Go to Products page and click 'Seed Demo Catalog' to populate the 2026 Sri Lankan cultural calendar."
+          title={t('festivals.noFestivalsTitle')}
+          description={t('festivals.noFestivalsDesc')}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -198,12 +200,12 @@ export const FestivalsPage: React.FC = () => {
                         {fest.date_confirmed ? (
                           <>
                             <CheckCircle2 size={13} />
-                            <span>Date Confirmed</span>
+                            <span>{t('festivals.confirmed')}</span>
                           </>
                         ) : (
                           <>
                             <AlertCircle size={13} />
-                            <span>Unconfirmed • Verification Required</span>
+                            <span>{t('festivals.unconfirmed')}</span>
                           </>
                         )}
                       </span>
@@ -218,7 +220,7 @@ export const FestivalsPage: React.FC = () => {
                     {/* Boosted Categories */}
                     <div style={{ marginBottom: '1rem' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.375rem' }}>
-                        Boosted Retail Categories:
+                        {t('festivals.boostedCategories')}
                       </div>
                       <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
                         {categoriesList.map((cat, cIdx) => (
@@ -241,7 +243,7 @@ export const FestivalsPage: React.FC = () => {
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 700, color: '#92400e', marginBottom: '0.25rem' }}>
                           <ShieldAlert size={14} />
-                          <span>Cultural Sensitivity & Brand Safety Rules:</span>
+                          <span>{t('festivals.sensitivityRules')}</span>
                         </div>
                         <ul style={{ listStyleType: 'disc', paddingLeft: '1.25rem', fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>
                           {rulesList.map((rule, rIdx) => (
@@ -260,11 +262,11 @@ export const FestivalsPage: React.FC = () => {
                         <span>
                           {fest.days_until !== null && fest.days_until !== undefined
                             ? fest.days_until > 0
-                              ? `In ${fest.days_until} days`
+                              ? `${t('festivals.inDays')} ${fest.days_until} ${t('festivals.daysUnit')}`
                               : fest.days_until === 0
-                              ? 'Today!'
-                              : `${Math.abs(fest.days_until)} days ago`
-                            : 'Date not set'}
+                              ? t('festivals.today')
+                              : `${Math.abs(fest.days_until)} ${t('festivals.daysAgo')}`
+                            : t('festivals.dateNotSet')}
                         </span>
                       </div>
 
@@ -272,7 +274,7 @@ export const FestivalsPage: React.FC = () => {
                         {fest.date ? new Date(fest.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unset'}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
-                        Promotion window: {fest.lead_days || 14} days ahead
+                        {t('festivals.promotionWindow')} {fest.lead_days || 14} {t('festivals.daysAhead')}
                       </div>
                     </div>
 
@@ -284,12 +286,12 @@ export const FestivalsPage: React.FC = () => {
                       {fest.date_confirmed ? (
                         <>
                           <Edit2 size={14} />
-                          <span>Edit Date / Window</span>
+                          <span>{t('festivals.editDateBtn')}</span>
                         </>
                       ) : (
                         <>
                           <Check size={14} />
-                          <span>Verify & Confirm Date</span>
+                          <span>{t('festivals.confirmDateBtn')}</span>
                         </>
                       )}
                     </button>
@@ -312,7 +314,7 @@ export const FestivalsPage: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 100,
-            padding: '1.5rem',
+            padding: 'clamp(0.75rem, 3vw, 1.5rem)',
           }}
         >
           <div
@@ -321,12 +323,14 @@ export const FestivalsPage: React.FC = () => {
               borderRadius: '1.25rem',
               width: '100%',
               maxWidth: '460px',
-              padding: '2rem',
+              padding: 'clamp(1rem, 3.5vw, 2rem)',
+              maxHeight: '90dvh',
+              overflowY: 'auto',
               boxShadow: 'var(--shadow-xl)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Confirm Festival Date</h2>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{t('festivals.modalTitle')}</h2>
               <button
                 onClick={() => setActiveModalFestival(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
@@ -336,12 +340,12 @@ export const FestivalsPage: React.FC = () => {
             </div>
 
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-              Confirm official date for <strong>{activeModalFestival.name_en}</strong>. GrowthOS will use this exact date to time automated priority promotions.
+              {t('festivals.modalSubtitle')} <strong>{activeModalFestival.name_en}</strong>. {t('festivals.modalSubtitle2')}
             </p>
 
             <form onSubmit={handleSaveFestival}>
               <div className="form-group">
-                <label className="form-label">Official Festival Date</label>
+                <label className="form-label">{t('festivals.officialDateLabel')}</label>
                 <input
                   type="date"
                   className="form-input"
@@ -352,7 +356,7 @@ export const FestivalsPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Promotion Lead Time (Days Prior)</label>
+                <label className="form-label">{t('festivals.leadDaysLabel')}</label>
                 <input
                   type="number"
                   className="form-input"
@@ -362,7 +366,7 @@ export const FestivalsPage: React.FC = () => {
                   max="45"
                 />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
-                  Recommended: 14 to 21 days for Sri Lankan holiday shopping.
+                  {t('festivals.leadDaysTip')}
                 </span>
               </div>
 
@@ -372,10 +376,10 @@ export const FestivalsPage: React.FC = () => {
                   onClick={() => setActiveModalFestival(null)}
                   className="btn btn-secondary"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  <Check size={16} /> Confirm Date
+                  <Check size={16} /> {t('festivals.confirmBtn')}
                 </button>
               </div>
             </form>

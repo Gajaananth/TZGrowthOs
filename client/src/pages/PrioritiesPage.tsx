@@ -18,8 +18,10 @@ import {
 } from '../services/api';
 import EmptyState from '../components/EmptyState';
 import DemoBadge from '../components/DemoBadge';
+import { useI18n } from '../context/I18nContext';
 
 export const PrioritiesPage: React.FC = () => {
+  const { t } = useI18n();
   const [priorities, setPriorities] = useState<PriorityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,6 +29,7 @@ export const PrioritiesPage: React.FC = () => {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const navigate = useNavigate();
+
 
   const loadPriorities = async () => {
     setLoading(true);
@@ -119,10 +122,10 @@ export const PrioritiesPage: React.FC = () => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.75rem' }}>✨</span>
-            <h1 className="title-hero">What Should We Promote?</h1>
+            <h1 className="title-hero">{t('priorities.title')}</h1>
           </div>
           <p className="subtitle-hero">
-            Deterministic scoring: Gross Margin (40 pts) + Stock Velocity (30 pts) + Sri Lankan Festival Boost (30 pts)
+            {t('priorities.subtitle')}
           </p>
         </div>
 
@@ -133,9 +136,10 @@ export const PrioritiesPage: React.FC = () => {
           style={{ minWidth: '180px' }}
         >
           <RefreshCw size={16} className={isGenerating ? 'spin' : ''} />
-          <span>{isGenerating ? 'Calculating Scores...' : 'Recalculate Scores'}</span>
+          <span>{isGenerating ? t('common.loading') : t('priorities.rescoreBtn')}</span>
         </button>
       </div>
+
 
       {/* 3 Metric Summary Cards */}
       <div className="grid-3" style={{ marginBottom: '1.5rem' }}>
@@ -294,7 +298,7 @@ export const PrioritiesPage: React.FC = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                   {/* Left: Product Info & Score */}
-                  <div style={{ flex: '1 1 350px' }}>
+                  <div style={{ flex: '1 1 min(260px, 100%)', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.375rem' }}>
                       <span
                         style={{

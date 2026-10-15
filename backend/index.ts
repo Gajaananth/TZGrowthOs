@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+if (!process.env.JWT_SECRET?.trim()) {
+  throw new Error('FATAL: JWT_SECRET environment variable is required');
+}
+
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -14,12 +18,19 @@ import demoRoutes from './routes/demo.js';
 import priorityRoutes from './routes/priorities.js';
 import festivalRoutes from './routes/festivals.js';
 import strategistRoutes from './routes/strategist.js';
+import campaignRoutes from './routes/campaigns.js';
+import assetRoutes from './routes/assets.js';
+import seoRoutes from './routes/seo.js';
+import insightsRoutes from './routes/insights.js';
+import chatRoutes from './routes/chat.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
+
+import { aiLimiter } from './middleware/aiLimiter.js';
 
 // Trust proxy for Vercel / Cloud Run
 app.set('trust proxy', 1);
@@ -33,13 +44,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: { success: false, error: 'AI rate limit reached. Please wait a few minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // ─── CORS ────────────────────────────────────────────────────
 const buildAllowedOrigins = (): string[] => {
@@ -107,14 +111,11 @@ app.use('/api/demo', authenticate, demoRoutes);
 app.use('/api/priorities', authenticate, priorityRoutes);
 app.use('/api/festivals', authenticate, festivalRoutes);
 app.use('/api/strategist', authenticate, strategistRoutes);
-
-// Protected routes (added in later phases)
-// app.use('/api/business', authenticate, businessRoutes);
-// app.use('/api/campaigns', authenticate, campaignRoutes);
-// app.use('/api/assets', authenticate, assetRoutes);
-// app.use('/api/seo', authenticate, seoRoutes);
-// app.use('/api/metrics', authenticate, metricsRoutes);
-// app.use('/api/insights', authenticate, insightsRoutes);
+app.use('/api/campaigns', campaignRoutes);   // Phase 4: auth handled inside router
+app.use('/api/assets', assetRoutes);         // Phase 4: auth handled inside router
+app.use('/api/seo', seoRoutes);              // Phase 5: auth handled inside router
+app.use('/api/insights', insightsRoutes);    // Phase 5: auth handled inside router
+app.use('/api/chat', chatRoutes);            // Phase 5: auth handled inside router
 
 // Serve static client in production / Docker
 if (process.env.NODE_ENV === 'production' || process.env.SERVE_CLIENT === 'true') {
@@ -138,8 +139,6 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 // ─── Export for Vercel Serverless ─────────────────────────────
 export default app;
 
-// Make AI rate limiter available for route registration
-export { aiLimiter };
 
 // ─── Start Server (Local / Docker) ───────────────────────────
 async function start() {

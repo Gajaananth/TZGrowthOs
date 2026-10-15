@@ -58,10 +58,10 @@ export const GrowthPlanPage: React.FC = () => {
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
           <span style={{ fontSize: '1.75rem' }}>🌱</span>
-          <h1 className="title-hero">Today's Growth Plan</h1>
+          <h1 className="title-hero">{t('plan.title')}</h1>
         </div>
         <p className="subtitle-hero">
-          Personalized daily retail intelligence for <strong>{business?.name || 'Your Retail Store'}</strong> in {business?.city || 'Sri Lanka'}.
+          {t('plan.subtitle')} <strong>{business?.name || 'Your Retail Store'}</strong> in {business?.city || 'Sri Lanka'}.
         </p>
       </div>
 
@@ -69,55 +69,55 @@ export const GrowthPlanPage: React.FC = () => {
       <div className="grid-4" style={{ marginBottom: '2rem' }}>
         <div className="card" style={{ padding: '1rem 1.25rem' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-            ACTIVE PRODUCTS
+            {t('plan.activeProducts')}
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.25rem' }}>
             {plan?.totalProducts || 0}
           </div>
           <Link to="/products" style={{ fontSize: '0.75rem', color: 'var(--primary-700)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-            Manage catalog <ChevronRight size={12} />
+            {t('plan.manageCatalog')} <ChevronRight size={12} />
           </Link>
         </div>
 
         <div className="card" style={{ padding: '1rem 1.25rem' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-            CATALOG INVENTORY VALUE
+            {t('plan.catalogValue')}
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#065f46', marginTop: '0.25rem' }}>
             Rs. {Number(plan?.totalCatalogValue || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
-            Available stock at retail price
+            {t('plan.catalogValueSub')}
           </span>
         </div>
 
         <div className="card" style={{ padding: '1rem 1.25rem' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-            HIGH PRIORITY PROMOTIONS
+            {t('plan.highPriority')}
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary-700)', marginTop: '0.25rem' }}>
             {plan?.topPromoteProducts?.length || 0} items
           </div>
           <Link to="/priorities" style={{ fontSize: '0.75rem', color: 'var(--primary-700)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-            View priorities <ChevronRight size={12} />
+            {t('plan.viewPriorities')} <ChevronRight size={12} />
           </Link>
         </div>
 
         <div className="card" style={{ padding: '1rem 1.25rem' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-            UPCOMING FESTIVALS
+            {t('plan.upcomingFestivals')}
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#92400e', marginTop: '0.25rem' }}>
             {plan?.approachingFestivals?.length || 0} active
           </div>
           <Link to="/festivals" style={{ fontSize: '0.75rem', color: '#92400e', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-            Cultural calendar <ChevronRight size={12} />
+            {t('plan.culturalCalendar')} <ChevronRight size={12} />
           </Link>
         </div>
       </div>
 
       {/* Main 2-Column Grid: Left (4 Questions Highlights) | Right (Action Checklist) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div className="growth-hero-grid">
         {/* Left Column: Key Question Highlights */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Question 1: What to Promote Today? */}
@@ -125,10 +125,11 @@ export const GrowthPlanPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, color: '#065f46', fontSize: '0.875rem' }}>
                 <Sparkles size={16} />
-                <span>1. WHAT SHOULD WE PROMOTE TODAY?</span>
+                <span>{t('plan.q1Title')}</span>
               </div>
-              <span className="badge badge-green">#1 Ranked Item</span>
+              <span className="badge badge-green">{t('plan.q1Badge')}</span>
             </div>
+
 
             {topHero ? (
               <div>
@@ -154,10 +155,10 @@ export const GrowthPlanPage: React.FC = () => {
                     onClick={() => navigate(`/campaigns/new?productId=${topHero.product_id}`)}
                     className="btn btn-primary btn-sm"
                   >
-                    <Megaphone size={14} /> Launch Promotion Campaign
+                    <Megaphone size={14} /> {t('plan.createCampaignBtn')}
                   </button>
                   <Link to="/priorities" className="btn btn-secondary btn-sm">
-                    View All Priorities
+                    {t('plan.viewPriorities')}
                   </Link>
                 </div>
               </div>
@@ -167,7 +168,7 @@ export const GrowthPlanPage: React.FC = () => {
                   Run priority calculation to see today's top product recommendation.
                 </p>
                 <Link to="/priorities" className="btn btn-primary btn-sm">
-                  <Sparkles size={14} /> Calculate Priorities
+                  <Sparkles size={14} /> {t('priorities.rescoreBtn')}
                 </Link>
               </div>
             )}
@@ -178,9 +179,9 @@ export const GrowthPlanPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, color: '#92400e', fontSize: '0.875rem' }}>
                 <Calendar size={16} />
-                <span>2 & 3. UPCOMING CULTURAL FESTIVAL DEMAND</span>
+                <span>{t('plan.q2Title')}</span>
               </div>
-              <span className="badge badge-gold">Active Lead Time</span>
+              <span className="badge badge-gold">{t('plan.q2Badge')}</span>
             </div>
 
             {approachingFestival ? (
@@ -198,16 +199,16 @@ export const GrowthPlanPage: React.FC = () => {
                 </p>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <Link to="/festivals" className="btn btn-secondary btn-sm">
-                    Check Festival Rules & Confirm Date
+                    {t('plan.culturalCalendar')}
                   </Link>
                   <Link to="/campaigns/new" className="btn btn-secondary btn-sm">
-                    Create Festival Offer
+                    {t('plan.createCampaignBtn')}
                   </Link>
                 </div>
               </div>
             ) : (
               <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                No active festivals in the immediate 14-day window. View the full 2026 calendar in the <Link to="/festivals" style={{ color: 'var(--primary-700)', fontWeight: 600 }}>Festival Calendar</Link>.
+                No active festivals in the immediate 14-day window. View the full 2026 calendar in the <Link to="/festivals" style={{ color: 'var(--primary-700)', fontWeight: 600 }}>{t('nav.festivals')}</Link>.
               </p>
             )}
           </div>
@@ -217,13 +218,13 @@ export const GrowthPlanPage: React.FC = () => {
             <div className="card" style={{ borderLeft: '5px solid #ef4444', backgroundColor: '#fffbfb' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#b91c1c', fontWeight: 700, fontSize: '0.875rem' }}>
                 <AlertTriangle size={16} />
-                <span>INVENTORY WARNING</span>
+                <span>{t('results.stockAttention')}</span>
               </div>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                 <strong>{lowestStockItem.name}</strong> has only <strong>{lowestStockItem.stock_qty}</strong> units left.
               </p>
               <Link to="/products" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>
-                Manage Inventory & Restock
+                {t('plan.manageCatalog')}
               </Link>
             </div>
           )}
@@ -233,11 +234,12 @@ export const GrowthPlanPage: React.FC = () => {
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--primary-800)', fontWeight: 800 }}>
             <TrendingUp size={18} />
-            <span style={{ fontSize: '1rem' }}>4. WHAT SHOULD WE DO NEXT?</span>
+            <span style={{ fontSize: '1rem' }}>{t('plan.q4Title')}</span>
           </div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-            Daily high-leverage growth checklist computed by GrowthOS.
+            {t('plan.checklistSubtitle')}
           </p>
+
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
             {plan?.nextActions?.map((act) => {

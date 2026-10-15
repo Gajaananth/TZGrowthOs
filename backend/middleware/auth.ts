@@ -1,11 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tradiq-zium-growthos-fallback-secret-2026';
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET?.trim();
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
+}
 
 export interface UserPayload {
   userId: string;
   email: string;
+  role?: string;
 }
 
 export interface AuthRequest extends Request {
@@ -21,7 +28,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
 
   const token = authHeader.substring(7).trim();
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as UserPayload;
+    const decoded = jwt.verify(token, getJwtSecret()) as UserPayload;
     req.user = decoded;
     next();
   } catch (err: any) {
@@ -30,5 +37,6 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
 }
 
 export function signToken(payload: UserPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' });
 }
+

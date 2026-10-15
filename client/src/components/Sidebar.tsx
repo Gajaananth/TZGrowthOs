@@ -16,8 +16,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import LanguageSwitcher from './LanguageSwitcher';
+import { TokenHeaderWidget } from './TokenHeaderWidget';
 
 export const Sidebar: React.FC = () => {
+
   const { user, business, logout } = useAuth();
   const { language, setLanguage, t } = useI18n();
   const navigate = useNavigate();
@@ -67,20 +70,17 @@ export const Sidebar: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
           <div
             style={{
-              width: '2.25rem',
-              height: '2.25rem',
+              width: '2.5rem',
+              height: '2.5rem',
               borderRadius: '0.625rem',
-              background: 'linear-gradient(135deg, #059669, #047857)',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '1.125rem',
-              boxShadow: '0 2px 4px rgba(5, 150, 105, 0.25)',
+              overflow: 'hidden',
+              flexShrink: 0,
             }}
           >
-            🌱
+            <img src="/logo.png" alt="GrowthOS Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--primary-800)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
@@ -121,41 +121,11 @@ export const Sidebar: React.FC = () => {
         )}
 
         {/* Language Switcher */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: '0.25rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            <Globe size={13} />
-            <span>Lang:</span>
-          </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
-            {(['en', 'si', 'ta'] as const).map((lang) => (
-              <button
-                key={lang}
-                onClick={() => setLanguage(lang)}
-                style={{
-                  padding: '0.125rem 0.375rem',
-                  fontSize: '0.6875rem',
-                  fontWeight: language === lang ? 700 : 500,
-                  borderRadius: '0.375rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: language === lang ? 'var(--primary-600)' : 'transparent',
-                  color: language === lang ? '#ffffff' : 'var(--text-muted)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {lang === 'en' ? 'EN' : lang === 'si' ? 'සිං' : 'த'}
-              </button>
-            ))}
-          </div>
+        <div style={{ paddingTop: '0.25rem', display: 'flex', justifyContent: 'center' }}>
+          <LanguageSwitcher variant="compact" showLabel={true} style={{ width: '100%', justifyContent: 'space-between' }} />
         </div>
       </div>
+
 
       {/* Navigation List */}
       <nav style={{ flex: 1, padding: '1rem 0.75rem', overflowY: 'auto' }}>
@@ -206,13 +176,20 @@ export const Sidebar: React.FC = () => {
           backgroundColor: '#fafbfc',
         }}
       >
+        <div style={{ marginBottom: '0.625rem', paddingBottom: '0.625rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#166534' }}>
+            AI Engine
+          </span>
+          <TokenHeaderWidget variant="compact" showLabel={true} />
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-main)' }}>
               {user?.email || 'Retailer'}
             </div>
             <div style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 500 }}>
-              Gemini 2.5 Active
+              Gemini 3.5 Flash Active
             </div>
           </div>
           <button

@@ -8,7 +8,7 @@ const router = Router();
 router.get('/', authenticate, async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
     const pool = getPool();
-    const result = await pool.query('SELECT * FROM festivals ORDER BY year ASC, date ASC');
+    const result = await pool.query('SELECT * FROM festivals ORDER BY year ASC, date ASC NULLS LAST');
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -17,7 +17,8 @@ router.get('/', authenticate, async (_req: AuthRequest, res: Response): Promise<
       let daysUntil: number | null = null;
       let isApproaching = false;
 
-      if (f.date) {
+      // Only calculate countdown if date is confirmed and date exists
+      if (f.date_confirmed && f.date) {
         const fDate = new Date(f.date);
         fDate.setHours(0, 0, 0, 0);
         const diffMs = fDate.getTime() - today.getTime();
@@ -42,9 +43,35 @@ router.get('/', authenticate, async (_req: AuthRequest, res: Response): Promise<
   }
 });
 
+// ─── Helper: check if user is admin/first registered user ──────
+async function isAdminOrFirstUser(userId: string): Promise<boolean> {
+  const pool = getPool();
+  try {
+    const userRes = await pool.query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+    const user = userRes.rows[0];
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+
+    // First registered user (oldest created_at) is treated as owner/admin
+    const firstRes = await pool.query('SELECT id FROM users ORDER BY created_at ASC LIMIT 1');
+    return firstRes.rows[0]?.id === userId;
+  } catch {
+    return false;
+  }
+}
+
 // ─── PUT /api/festivals/:id ────────────────────────────────────
 router.put('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const allowed = await isAdminOrFirstUser(req.user!.userId);
+    if (!allowed) {
+      res.status(403).json({ success: false, error: 'Only the account owner can edit festival dates.' });
+      return;
+    }
+
     const { date, date_confirmed, lead_days, categories_boosted, sensitivity_rules, source_note } = req.body;
 
     const pool = getPool();
@@ -84,6 +111,12 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response): Promis
 // ─── POST /api/festivals/:id/confirm ──────────────────────────
 router.post('/:id/confirm', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const allowed = await isAdminOrFirstUser(req.user!.userId);
+    if (!allowed) {
+      res.status(403).json({ success: false, error: 'Only the account owner can confirm festival dates.' });
+      return;
+    }
+
     const { date } = req.body;
     const pool = getPool();
 
@@ -113,3 +146,4 @@ router.post('/:id/confirm', authenticate, async (req: AuthRequest, res: Response
 });
 
 export default router;
+

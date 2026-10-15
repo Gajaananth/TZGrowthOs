@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { getPool } from '../db/connection.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { aiLimiter } from '../middleware/aiLimiter.js';
 import { calculateProductScore, getApproachingFestivals, ScoringResult } from '../lib/scoring.js';
 import { thinkJSON } from '../services/ai/thinkJSON.js';
 import {
@@ -67,7 +68,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
 });
 
 // ─── POST /api/priorities/generate ────────────────────────────
-router.post('/generate', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/generate', authenticate, aiLimiter, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const business = await getBusinessForUser(req.user!.userId);
     if (!business) {

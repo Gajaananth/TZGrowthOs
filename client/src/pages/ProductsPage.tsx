@@ -26,13 +26,16 @@ import {
 import EmptyState from '../components/EmptyState';
 import DemoBadge from '../components/DemoBadge';
 import Badge from '../components/Badge';
+import { useI18n } from '../context/I18nContext';
 
 export const ProductsPage: React.FC = () => {
+  const { t } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -297,24 +300,24 @@ export const ProductsPage: React.FC = () => {
         }}
       >
         <div>
-          <h1 className="title-hero">📦 My Products</h1>
+          <h1 className="title-hero">📦 {t('products.title')}</h1>
           <p className="subtitle-hero">
-            Manage your retail inventory, profit margins, and sales velocity
+            {t('products.subtitle')}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
           <button onClick={handleSeedDemo} className="btn btn-secondary" title="Load 8 sample Sri Lankan products">
             <Sparkles size={16} color="#059669" />
-            <span>Seed Demo Catalog</span>
+            <span>{t('settings.seedBtn')}</span>
           </button>
           <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">
             <Upload size={16} />
-            <span>Import CSV</span>
+            <span>{t('products.importCsv')}</span>
           </button>
           <button onClick={handleOpenAddModal} className="btn btn-primary">
             <Plus size={16} />
-            <span>Add Product</span>
+            <span>{t('products.addProduct')}</span>
           </button>
         </div>
       </div>
@@ -327,7 +330,7 @@ export const ProductsPage: React.FC = () => {
             <Search size={18} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
             <input
               type="text"
-              placeholder="Search products by name or category..."
+              placeholder={t('products.searchPlaceholder')}
               className="form-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -355,7 +358,7 @@ export const ProductsPage: React.FC = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                {cat}
+                {cat === 'all' ? t('products.allCategories') : cat}
               </button>
             ))}
           </div>
@@ -373,7 +376,7 @@ export const ProductsPage: React.FC = () => {
                 textDecoration: 'underline',
               }}
             >
-              Clear demo products
+              {t('settings.clearBtn')}
             </button>
           )}
         </div>
@@ -393,18 +396,18 @@ export const ProductsPage: React.FC = () => {
               margin: '0 auto 1rem',
             }}
           />
-          Loading products catalog...
+          {t('common.loading')}
         </div>
       ) : filteredProducts.length === 0 ? (
         <EmptyState
           icon={<Package size={28} />}
-          title={search ? 'No products match your search' : 'No products in catalog'}
+          title={search ? 'No products match your search' : t('products.emptyTitle')}
           description={
             search
               ? 'Try adjusting your search terms or category filter.'
-              : 'Add products manually or seed the sample Sri Lankan retail catalog with 1-click.'
+              : t('products.emptyDesc')
           }
-          actionText={search ? undefined : 'Seed Sample Catalog'}
+          actionText={search ? undefined : t('settings.seedBtn')}
           onAction={search ? undefined : handleSeedDemo}
         />
       ) : (
@@ -412,15 +415,16 @@ export const ProductsPage: React.FC = () => {
           <table className="table">
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Category</th>
-                <th style={{ textAlign: 'right' }}>Price (LKR)</th>
-                <th style={{ textAlign: 'right' }}>Cost & Margin</th>
-                <th style={{ textAlign: 'center' }}>Stock</th>
+                <th>{t('products.colProduct')}</th>
+                <th>{t('products.colCategory')}</th>
+                <th style={{ textAlign: 'right' }}>{t('products.colPrice')}</th>
+                <th style={{ textAlign: 'right' }}>{t('products.colCost')}</th>
+                <th style={{ textAlign: 'center' }}>{t('products.colStock')}</th>
                 <th style={{ textAlign: 'right' }}>30d Sales</th>
-                <th style={{ textAlign: 'center' }}>Actions</th>
+                <th style={{ textAlign: 'center' }}>{t('products.colActions')}</th>
               </tr>
             </thead>
+
             <tbody>
               {filteredProducts.map((p) => {
                 const stockNum = p.stock_qty;
@@ -553,7 +557,7 @@ export const ProductsPage: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 100,
-            padding: '1.5rem',
+            padding: 'clamp(0.75rem, 3vw, 1.5rem)',
           }}
         >
           <div
@@ -562,7 +566,9 @@ export const ProductsPage: React.FC = () => {
               borderRadius: '1.25rem',
               width: '100%',
               maxWidth: '520px',
-              padding: '2rem',
+              padding: 'clamp(1rem, 3.5vw, 2rem)',
+              maxHeight: '90dvh',
+              overflowY: 'auto',
               boxShadow: 'var(--shadow-xl)',
             }}
           >
@@ -591,7 +597,7 @@ export const ProductsPage: React.FC = () => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Category</label>
                   <select
@@ -621,7 +627,7 @@ export const ProductsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Selling Price (LKR) *</label>
                   <input
@@ -707,7 +713,7 @@ export const ProductsPage: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 100,
-            padding: '1.5rem',
+            padding: 'clamp(0.75rem, 3vw, 1.5rem)',
           }}
         >
           <div
@@ -716,7 +722,9 @@ export const ProductsPage: React.FC = () => {
               borderRadius: '1.25rem',
               width: '100%',
               maxWidth: '560px',
-              padding: '2rem',
+              padding: 'clamp(1rem, 3.5vw, 2rem)',
+              maxHeight: '90dvh',
+              overflowY: 'auto',
               boxShadow: 'var(--shadow-xl)',
             }}
           >

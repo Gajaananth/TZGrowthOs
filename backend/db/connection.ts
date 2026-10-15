@@ -272,6 +272,9 @@ async function runMigrations(client: any): Promise<void> {
     `);
 
     console.log('[DB] Migrations complete.');
+
+    // Seed canonical festivals (independent of demo data)
+    await seedFestivals(client);
   } finally {
     if (lockAcquired) {
       try {
@@ -279,6 +282,165 @@ async function runMigrations(client: any): Promise<void> {
       } catch (e) {
         console.error('[DB] Failed to release advisory lock:', e);
       }
+    }
+  }
+}
+
+/**
+ * Seed the 10 canonical Sri Lankan festivals at startup if they don't exist.
+ * Dates are NULL and date_confirmed=false (unconfirmed) except Christmas (Dec 25, confirmed).
+ * Owners must confirm actual dates via the Festivals UI before use.
+ */
+async function seedFestivals(client: any): Promise<void> {
+  const year = new Date().getFullYear();
+
+  const festivals = [
+    {
+      key: 'sinhala_new_year',
+      name_en: 'Sinhala & Tamil New Year (Avurudu)',
+      name_si: 'සිංහල හා දෙමළ නව වර්ෂය',
+      name_ta: 'சிங்கள தமிழ் புத்தாண்டு',
+      date: null,
+      date_confirmed: false,
+      lead_days: 21,
+      categories_boosted: ['food', 'clothing', 'gifts', 'sweets', 'household'],
+      sensitivity_rules: ['Avoid competitive messaging', 'Celebrate cultural unity'],
+      source_note: 'Traditionally April 13-14. Owner must confirm exact date.',
+    },
+    {
+      key: 'vesak',
+      name_en: 'Vesak Poya',
+      name_si: 'වෙසක් පෝය',
+      name_ta: 'வெசாக் பூஜை',
+      date: null,
+      date_confirmed: false,
+      lead_days: 14,
+      categories_boosted: ['lanterns', 'food', 'religious items', 'flowers'],
+      sensitivity_rules: ['No alcohol or meat promotions', 'Use respectful religious tone'],
+      source_note: 'Full moon day in May. Owner must confirm exact date.',
+    },
+    {
+      key: 'poson',
+      name_en: 'Poson Poya',
+      name_si: 'පොසොන් පෝය',
+      name_ta: 'பொசொன் பூஜை',
+      date: null,
+      date_confirmed: false,
+      lead_days: 10,
+      categories_boosted: ['food', 'religious items', 'white clothing'],
+      sensitivity_rules: ['No alcohol promotions', 'Respectful Buddhist tone'],
+      source_note: 'Full moon in June. Owner must confirm exact date.',
+    },
+    {
+      key: 'ramadan',
+      name_en: 'Ramadan',
+      name_si: 'රමදාන්',
+      name_ta: 'ரமலான்',
+      date: null,
+      date_confirmed: false,
+      lead_days: 21,
+      categories_boosted: ['food', 'clothing', 'dates', 'gifts'],
+      sensitivity_rules: ['Avoid alcohol/pork messaging', 'Use respectful Islamic tone', 'Promote pre-dawn and iftar offers'],
+      source_note: 'Lunar calendar — date varies yearly. Owner must confirm.',
+    },
+    {
+      key: 'eid_al_fitr',
+      name_en: 'Eid al-Fitr',
+      name_si: 'ඊද් අල්-ෆිතර්',
+      name_ta: 'ஈத் உல் பித்ர்',
+      date: null,
+      date_confirmed: false,
+      lead_days: 14,
+      categories_boosted: ['clothing', 'food', 'gifts', 'sweets'],
+      sensitivity_rules: ['Respectful Islamic messaging', 'Celebrate end of fasting'],
+      source_note: 'End of Ramadan. Owner must confirm exact date.',
+    },
+    {
+      key: 'eid_al_adha',
+      name_en: 'Eid al-Adha',
+      name_si: 'ඊද් අල්-අද්හා',
+      name_ta: 'ஈத் உல் அது',
+      date: null,
+      date_confirmed: false,
+      lead_days: 14,
+      categories_boosted: ['meat', 'clothing', 'gifts'],
+      sensitivity_rules: ['Respectful Islamic messaging', 'Avoid insensitive content'],
+      source_note: 'Feast of Sacrifice. Owner must confirm exact date.',
+    },
+    {
+      key: 'deepavali',
+      name_en: 'Deepavali (Diwali)',
+      name_si: 'දීපාවලී',
+      name_ta: 'தீபாவளி',
+      date: null,
+      date_confirmed: false,
+      lead_days: 14,
+      categories_boosted: ['gifts', 'sweets', 'clothing', 'lighting', 'jewellery'],
+      sensitivity_rules: ['Celebrate light and prosperity', 'Respectful Hindu messaging'],
+      source_note: 'Hindu lunar calendar — date varies. Owner must confirm.',
+    },
+    {
+      key: 'thai_pongal',
+      name_en: 'Thai Pongal',
+      name_si: 'තායිපොංගල්',
+      name_ta: 'தைப்பொங்கல்',
+      date: null,
+      date_confirmed: false,
+      lead_days: 10,
+      categories_boosted: ['food', 'rice', 'sugarcane', 'household'],
+      sensitivity_rules: ['Celebrate Tamil harvest festival', 'Respectful tone'],
+      source_note: 'Traditionally January 14. Owner must confirm exact date.',
+    },
+    {
+      key: 'christmas',
+      name_en: 'Christmas',
+      name_si: 'නත්තල්',
+      name_ta: 'கிறிஸ்துமஸ்',
+      date: `${year}-12-25`,
+      date_confirmed: true,
+      lead_days: 21,
+      categories_boosted: ['gifts', 'food', 'clothing', 'electronics', 'toys', 'decorations'],
+      sensitivity_rules: ['Inclusive messaging for all communities', 'Festive and joyful tone'],
+      source_note: 'Fixed date: December 25.',
+    },
+    {
+      key: 'back_to_school',
+      name_en: 'Back to School Season',
+      name_si: 'පාසල් ආරම්භය',
+      name_ta: 'பள்ளி திறப்பு',
+      date: null,
+      date_confirmed: false,
+      lead_days: 14,
+      categories_boosted: ['stationery', 'clothing', 'bags', 'shoes', 'electronics'],
+      sensitivity_rules: ['Focus on value and quality for families'],
+      source_note: 'Typically January and September in Sri Lanka. Owner must confirm.',
+    },
+  ];
+
+  for (const f of festivals) {
+    const existing = await client.query(
+      'SELECT id FROM festivals WHERE key = $1 AND year = $2 LIMIT 1',
+      [f.key, year]
+    );
+    if (existing.rows.length === 0) {
+      await client.query(
+        `INSERT INTO festivals (key, name_en, name_si, name_ta, year, date, date_confirmed, lead_days, categories_boosted, sensitivity_rules, source_note)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11)`,
+        [
+          f.key,
+          f.name_en,
+          f.name_si,
+          f.name_ta,
+          year,
+          f.date || null,
+          f.date_confirmed,
+          f.lead_days,
+          JSON.stringify(f.categories_boosted),
+          JSON.stringify(f.sensitivity_rules),
+          f.source_note,
+        ]
+      );
+      console.log(`[DB] Seeded festival: ${f.name_en}`);
     }
   }
 }

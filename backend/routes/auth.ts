@@ -137,4 +137,49 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response): Promise
   }
 });
 
+// PUT /api/auth/business
+router.put('/business', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { name, business_type, city, brand_tone, default_language } = req.body;
+    const pool = getPool();
+
+    const checkRes = await pool.query(
+      'SELECT id FROM businesses WHERE user_id = $1 LIMIT 1',
+      [req.user!.userId]
+    );
+
+    let updatedBusiness;
+    if (checkRes.rows.length === 0) {
+      const insRes = await pool.query(
+        `INSERT INTO businesses (user_id, name, business_type, city, brand_tone, default_language)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [req.user!.userId, name || 'My Retail Store', business_type || 'Retail', city || 'Colombo', brand_tone || 'friendly', default_language || 'en']
+      );
+      updatedBusiness = insRes.rows[0];
+    } else {
+      const updRes = await pool.query(
+        `UPDATE businesses
+         SET name = COALESCE($1, name),
+             business_type = COALESCE($2, business_type),
+             city = COALESCE($3, city),
+             brand_tone = COALESCE($4, brand_tone),
+             default_language = COALESCE($5, default_language)
+         WHERE user_id = $6
+         RETURNING *`,
+        [name, business_type, city, brand_tone, default_language, req.user!.userId]
+      );
+      updatedBusiness = updRes.rows[0];
+    }
+
+    res.json({
+      success: true,
+      business: updatedBusiness,
+    });
+  } catch (err: any) {
+    console.error('[Auth] Business update error:', err);
+    res.status(500).json({ success: false, error: 'Failed to update business profile', details: err.message });
+  }
+});
+
 export default router;
+

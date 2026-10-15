@@ -5,6 +5,7 @@ import { I18nProvider } from './context/I18nContext';
 
 import Sidebar from './components/Sidebar';
 import BottomTabBar from './components/BottomTabBar';
+import TopHeader from './components/TopHeader';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -65,12 +66,14 @@ const ProtectedLayout: React.FC = () => {
     <div className="app-container">
       <Sidebar />
       <main className="main-content">
+        <TopHeader />
         <Outlet />
       </main>
       <BottomTabBar />
     </div>
   );
 };
+
 
 export const App: React.FC = () => {
   return (

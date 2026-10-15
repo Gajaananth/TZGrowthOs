@@ -14,7 +14,7 @@ export interface ThinkJSONOptions<T> {
 /**
  * Clean potential markdown wrappers from Gemini JSON responses
  */
-function cleanJsonOutput(text: string): string {
+export function cleanJsonOutput(text: string): string {
   let cleaned = text.trim();
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.substring(7);
@@ -29,10 +29,19 @@ function cleanJsonOutput(text: string): string {
   return cleaned.trim();
 }
 
+
+export interface AiExecutionMetadata {
+  tokensIn: number;
+  tokensOut: number;
+  totalTokens: number;
+  latencyMs: number;
+  model: string;
+}
+
 /**
- * Execute a Gemini prompt and validate output against a Zod schema with audit logging
+ * Execute a Gemini prompt and validate output against a Zod schema with audit logging and return execution metadata
  */
-export async function thinkJSON<T>(options: ThinkJSONOptions<T>): Promise<T> {
+export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promise<{ data: T; meta: AiExecutionMetadata }> {
   const {
     prompt,
     systemInstruction,
@@ -42,7 +51,7 @@ export async function thinkJSON<T>(options: ThinkJSONOptions<T>): Promise<T> {
     temperature = 0.2,
   } = options;
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+  const modelName = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
   const startTime = Date.now();
 
   try {
@@ -67,25 +76,40 @@ export async function thinkJSON<T>(options: ThinkJSONOptions<T>): Promise<T> {
     const latencyMs = Date.now() - startTime;
     const usage = response.usageMetadata;
 
+    const tokensIn = usage?.promptTokenCount || Math.ceil(((prompt?.length || 0) + (systemInstruction?.length || 0)) / 4) || 0;
+    const tokensOut = usage?.candidatesTokenCount || Math.ceil((rawText?.length || 0) / 4) || 0;
+    const totalTokens = (usage as any)?.totalTokenCount || (tokensIn + tokensOut);
+
     await logAiRun({
       userId,
       feature: featureName,
       model: modelName,
       latencyMs,
       success: true,
-      tokensIn: usage?.promptTokenCount,
-      tokensOut: usage?.candidatesTokenCount,
+      tokensIn,
+      tokensOut,
     });
 
-    return validatedData;
+    return {
+      data: validatedData,
+      meta: {
+        tokensIn,
+        tokensOut,
+        totalTokens,
+        latencyMs,
+        model: modelName,
+      },
+    };
   } catch (err: any) {
     const latencyMs = Date.now() - startTime;
+    const tokensIn = Math.ceil(((prompt?.length || 0) + (systemInstruction?.length || 0)) / 4) || 0;
     await logAiRun({
       userId,
       feature: featureName,
       model: modelName,
       latencyMs,
       success: false,
+      tokensIn,
       errorMessage: err.message,
     });
 
@@ -93,3 +117,12 @@ export async function thinkJSON<T>(options: ThinkJSONOptions<T>): Promise<T> {
     throw err;
   }
 }
+
+/**
+ * Execute a Gemini prompt and validate output against a Zod schema with audit logging
+ */
+export async function thinkJSON<T>(options: ThinkJSONOptions<T>): Promise<T> {
+  const result = await thinkJSONWithMeta<T>(options);
+  return result.data;
+}
+
