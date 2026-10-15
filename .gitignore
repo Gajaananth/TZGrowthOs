@@ -1,13 +1,37 @@
-node_modules/
-dist/
+# Environment files
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
+
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Build artifacts
+dist/
+client/dist/
+coverage/
 *.js.map
 *.tsbuildinfo
 .vercel/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Secrets and credentials
+*.pem
+*.key
+*.p12
+service-account*.json
+credentials*.json
+
+# Operating System files
 .DS_Store
 Thumbs.db
+
+# Project-specific local / legacy directories
 _legacy/
 tmp/

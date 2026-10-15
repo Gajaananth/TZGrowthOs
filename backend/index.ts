@@ -117,10 +117,16 @@ app.use('/api/seo', seoRoutes);              // Phase 5: auth handled inside rou
 app.use('/api/insights', insightsRoutes);    // Phase 5: auth handled inside router
 app.use('/api/chat', chatRoutes);            // Phase 5: auth handled inside router
 
-// Serve static client in production / Docker
+// ─── Serve static client in production / Docker ──────────────────
 if (process.env.NODE_ENV === 'production' || process.env.SERVE_CLIENT === 'true') {
   const clientDist = path.join(__dirname, '../client/dist');
   app.use(express.static(clientDist));
+
+  // Catch unmatched API routes with 404 JSON before falling through to SPA index.html
+  app.all('/api/*', (_req, res) => {
+    res.status(404).json({ success: false, error: 'API endpoint not found' });
+  });
+
   app.get('*', (_req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
@@ -139,19 +145,42 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 // ─── Export for Vercel Serverless ─────────────────────────────
 export default app;
 
-
-// ─── Start Server (Local / Docker) ───────────────────────────
+// ─── Start Server (Local / Docker / Cloud Run) ────────────────
 async function start() {
-  // Fail loudly if DATABASE_URL is missing
-  if (!process.env.DATABASE_URL) {
-    console.error('[FATAL] DATABASE_URL is not set. Cannot start without a database.');
+  // Validate all required environment variables
+  const missingEnv: string[] = [];
+  if (!process.env.JWT_SECRET?.trim()) missingEnv.push('JWT_SECRET');
+  if (!process.env.DATABASE_URL?.trim()) missingEnv.push('DATABASE_URL');
+  if (!process.env.GEMINI_API_KEY?.trim()) missingEnv.push('GEMINI_API_KEY');
+
+  if (missingEnv.length > 0) {
+    console.error(`[FATAL] Missing required environment variable(s): ${missingEnv.join(', ')}`);
+    console.error('[FATAL] Please define them in .env or your Cloud Run service environment.');
     process.exit(1);
   }
+
   await initDatabase();
+
   if (!process.env.VERCEL) {
-    app.listen(PORT, () => {
-      console.log(`[GrowthOS] Server running on port ${PORT}`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`[GrowthOS] Server running on http://0.0.0.0:${PORT} (PID: ${process.pid})`);
     });
+
+    // Graceful shutdown handling for Cloud Run & container orchestrators
+    const handleShutdown = (signal: string) => {
+      console.log(`[GrowthOS] Received ${signal}. Shutting down gracefully...`);
+      server.close(() => {
+        console.log('[GrowthOS] HTTP server closed.');
+        process.exit(0);
+      });
+      setTimeout(() => {
+        console.error('[GrowthOS] Forced shutdown after timeout.');
+        process.exit(1);
+      }, 10000).unref();
+    };
+
+    process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+    process.on('SIGINT', () => handleShutdown('SIGINT'));
   }
 }
 
