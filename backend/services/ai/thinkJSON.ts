@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getGeminiModel, logAiRun } from './gemini.js';
+import { getGeminiModel, logAiRun, sanitizeErrorMessage } from './gemini.js';
 
 export interface ThinkJSONOptions<T> {
   prompt: string;
@@ -110,10 +110,10 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
       latencyMs,
       success: false,
       tokensIn,
-      errorMessage: err.message,
+      errorMessage: sanitizeErrorMessage(err.message),
     });
 
-    console.error(`[thinkJSON] Error in ${featureName}:`, err.message);
+    console.error(`[thinkJSON] Error in ${featureName}:`, sanitizeErrorMessage(err.message));
     throw err;
   }
 }

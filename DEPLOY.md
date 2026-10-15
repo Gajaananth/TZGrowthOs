@@ -24,6 +24,11 @@ gcloud config set project YOUR_PROJECT_ID
 gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/tradiq-zium-growthos:latest .
 
 # 3. Deploy to Cloud Run
+# Option A: With Google Secret Manager (Recommended for production security)
+# Create secrets first:
+#   gcloud secrets create gemini-api-key --data-file=- <<< "YOUR_GEMINI_API_KEY"
+#   gcloud secrets create jwt-secret --data-file=- <<< "YOUR_SECURE_JWT_SECRET"
+
 gcloud run deploy tradiq-zium-growthos \
   --image gcr.io/YOUR_PROJECT_ID/tradiq-zium-growthos:latest \
   --platform managed \
@@ -32,8 +37,19 @@ gcloud run deploy tradiq-zium-growthos \
   --port 8080 \
   --set-env-vars "NODE_ENV=production,SERVE_CLIENT=true,GEMINI_MODEL=gemini-3.5-flash" \
   --set-env-vars "DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require" \
-  --set-env-vars "GEMINI_API_KEY=YOUR_GEMINI_API_KEY" \
-  --set-env-vars "JWT_SECRET=YOUR_SECURE_JWT_SECRET"
+  --set-secrets "GEMINI_API_KEY=gemini-api-key:latest,JWT_SECRET=jwt-secret:latest"
+
+# Option B: With direct environment variables (Quick start)
+# gcloud run deploy tradiq-zium-growthos \
+#   --image gcr.io/YOUR_PROJECT_ID/tradiq-zium-growthos:latest \
+#   --platform managed \
+#   --region asia-south1 \
+#   --allow-unauthenticated \
+#   --port 8080 \
+#   --set-env-vars "NODE_ENV=production,SERVE_CLIENT=true,GEMINI_MODEL=gemini-3.5-flash" \
+#   --set-env-vars "DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require" \
+#   --set-env-vars "GEMINI_API_KEY=YOUR_GEMINI_API_KEY" \
+#   --set-env-vars "JWT_SECRET=YOUR_SECURE_JWT_SECRET"
 ```
 
 ---
