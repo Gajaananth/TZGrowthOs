@@ -7,24 +7,41 @@ let pool: Pool | null = null;
 let isInitialized = false;
 let initPromise: Promise<void> | null = null;
 
+function cleanConnectionString(raw: string): string {
+  let str = (raw || '').trim();
+  // Strip surrounding quotes
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  // Strip accidental prefix if user pasted the key name too
+  if (str.startsWith('DATABASE_URL=')) {
+    str = str.slice('DATABASE_URL='.length).trim();
+  }
+  // Strip psql prefix if copied from CLI instructions
+  if (str.startsWith('psql ')) {
+    str = str.replace(/^psql\s+['"]?/, '').replace(/['"]?$/, '').trim();
+  }
+  return str;
+}
+
 function getPool(): Pool {
   if (pool) return pool;
 
-  const connectionString = (process.env.DATABASE_URL || '').trim();
+  const connectionString = cleanConnectionString(process.env.DATABASE_URL || '');
   if (!connectionString) {
     throw new Error('DATABASE_URL is not set. Cannot connect to database.');
   }
 
   const isVercel = !!process.env.VERCEL;
   const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
-  const useSsl = !isLocal && (connectionString.includes('sslmode=require') || connectionString.includes('neon.tech') || connectionString.includes('supabase.co') || isVercel);
+  const useSsl = !isLocal && (connectionString.includes('sslmode=require') || connectionString.includes('neon.tech') || connectionString.includes('supabase.co') || connectionString.includes('supabase.com') || isVercel);
 
   pool = new Pool({
     connectionString,
     max: isVercel ? 5 : 20,
     idleTimeoutMillis: isVercel ? 5000 : 30000,
     connectionTimeoutMillis: 10000,
-    ssl: useSsl ? { rejectUnauthorized: process.env.NODE_ENV === 'production' && !connectionString.includes('neon.tech') } : false,
+    ssl: useSsl ? { rejectUnauthorized: false } : false,
   });
 
   pool.on('error', (err) => {

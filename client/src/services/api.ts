@@ -2,7 +2,10 @@
  * Tradiq Zium GrowthOS API Client
  */
 
-const API_BASE = '/api';
+// Base URL for backend API requests. Supports VITE_API_BASE_URL for decoupled hosting (e.g. Firebase + Render)
+// Falls back to relative '/api' proxy for local development and unified deployments.
+const envBase = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
+const API_BASE = envBase ? `${envBase}/api` : '/api';
 
 export interface ApiResponse<T = any> {
   success: boolean;
