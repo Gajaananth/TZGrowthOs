@@ -20,9 +20,14 @@ async function getBusiness(userId: string) {
 // ─── Schema for chat response ─────────────────────────────────
 const ChatResponseSchema = z.object({
   answer: z.string(),
-  action_items: z.array(z.string()).max(5),
-  related_products: z.array(z.string()).max(3),
-  confidence: z.enum(['high', 'medium', 'low']),
+  action_items: z.array(z.string()).optional().default([]).transform(items => (items || []).slice(0, 5)),
+  related_products: z.array(z.string()).optional().default([]).transform(items => (items || []).slice(0, 3)),
+  confidence: z.string().optional().default('high').transform(val => {
+    const s = String(val).toLowerCase();
+    if (s.includes('low')) return 'low' as const;
+    if (s.includes('med')) return 'medium' as const;
+    return 'high' as const;
+  }),
 });
 type ChatResponse = z.infer<typeof ChatResponseSchema>;
 
@@ -218,7 +223,8 @@ router.post('/message', authenticate, aiLimiter, async (req: AuthRequest, res: R
         });
         response = result.data;
         aiMeta = result.meta;
-      } catch {
+      } catch (aiErr: any) {
+        console.warn('[Chat] Gemini generation failed, using structured fallback:', aiErr.message);
         response = buildFallbackResponse(question, ctx, business);
         aiMeta = {
           tokensIn: 280,

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { sendChatMessage, ChatResponse } from '../services/api';
 import { useI18n } from '../context/I18nContext';
+import { useNavigate } from 'react-router-dom';
 
 interface UiMessage {
   id: string;
@@ -30,6 +31,7 @@ const STARTER_PROMPTS = [
 
 export const ChatPage: React.FC = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       id: 'welcome',
@@ -240,8 +242,13 @@ export const ChatPage: React.FC = () => {
                     {/* Action Items Checklist */}
                     {msg.data.action_items && msg.data.action_items.length > 0 && (
                       <div style={{ marginBottom: '0.75rem' }}>
-                        <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          Recommended Action Steps
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                          <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Recommended Action Steps
+                          </span>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--primary-700)', fontWeight: 600 }}>
+                            Tick to select & send
+                          </span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                           {msg.data.action_items.map((item, idx) => {
@@ -250,31 +257,146 @@ export const ChatPage: React.FC = () => {
                             return (
                               <div
                                 key={idx}
-                                onClick={() => toggleActionItem(itemKey)}
                                 style={{
                                   display: 'flex',
-                                  alignItems: 'flex-start',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
                                   gap: '0.45rem',
-                                  cursor: 'pointer',
                                   padding: '0.35rem 0.5rem',
                                   borderRadius: '0.375rem',
                                   background: isDone ? 'var(--primary-50)' : 'var(--bg-subtle)',
                                   color: isDone ? 'var(--primary-800)' : 'var(--text-main)',
-                                  textDecoration: isDone ? 'line-through' : 'none',
                                   fontSize: '0.82rem',
                                   transition: 'background 0.15s'
                                 }}
                               >
-                                {isDone ? (
-                                  <CheckSquare size={16} color="var(--primary-600)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                ) : (
-                                  <Square size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                )}
-                                <span>{item}</span>
+                                <div
+                                  onClick={() => toggleActionItem(itemKey)}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '0.45rem',
+                                    cursor: 'pointer',
+                                    flex: 1,
+                                    textDecoration: isDone ? 'line-through' : 'none'
+                                  }}
+                                >
+                                  {isDone ? (
+                                    <CheckSquare size={16} color="var(--primary-600)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                  ) : (
+                                    <Square size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                  )}
+                                  <span>{item}</span>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSend(`Please give me a concrete step-by-step action plan to execute this: "${item}"`);
+                                  }}
+                                  title="Ask AI strategist how to execute this"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    padding: '0.2rem 0.45rem',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    borderRadius: '0.25rem',
+                                    border: '1px solid var(--primary-300)',
+                                    background: 'white',
+                                    color: 'var(--primary-700)',
+                                    cursor: 'pointer',
+                                    flexShrink: 0
+                                  }}
+                                >
+                                  <Send size={11} /> Ask How
+                                </button>
                               </div>
                             );
                           })}
                         </div>
+
+                        {/* Toolbar when items are checked */}
+                        {(() => {
+                          const checkedItems = msg.data.action_items.filter((_, idx) => checkedActions[`${msg.id}_act_${idx}`]);
+                          if (checkedItems.length === 0) return null;
+                          return (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              flexWrap: 'wrap',
+                              marginTop: '0.5rem',
+                              padding: '0.5rem',
+                              background: '#ecfdf5',
+                              border: '1px solid #a7f3d0',
+                              borderRadius: '0.5rem'
+                            }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#065f46' }}>
+                                {checkedItems.length} ticked:
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const query = `Here are the actions I selected to execute:\n${checkedItems.map(i => '- ' + i).join('\n')}\nHow do I execute these steps effectively for my store?`;
+                                  handleSend(query);
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  background: 'var(--primary-700)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.375rem',
+                                  padding: '0.3rem 0.6rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <Send size={12} /> Send Ticked to Chat
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInput(`Help me implement: ${checkedItems.join('; ')}`);
+                                  inputRef.current?.focus();
+                                }}
+                                style={{
+                                  background: 'white',
+                                  color: 'var(--primary-800)',
+                                  border: '1px solid var(--primary-300)',
+                                  borderRadius: '0.375rem',
+                                  padding: '0.3rem 0.6rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✍️ Edit in Textbox
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigate('/campaigns/new')}
+                                style={{
+                                  background: 'white',
+                                  color: 'var(--primary-800)',
+                                  border: '1px solid var(--primary-300)',
+                                  borderRadius: '0.375rem',
+                                  padding: '0.3rem 0.6rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                🚀 Create Campaign
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 

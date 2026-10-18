@@ -51,27 +51,57 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
     temperature = 0.2,
   } = options;
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+  const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
   const startTime = Date.now();
+  let activeModelName = modelName;
 
   try {
-    const model = getGeminiModel();
-
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature,
-      },
-    });
+    let result;
+    try {
+      const model = getGeminiModel(activeModelName);
+      result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature,
+        },
+      });
+    } catch (primaryErr: any) {
+      const altModel = activeModelName === 'gemini-3.8-flash' ? 'gemini-3.5-flash' : 'gemini-3.8-flash';
+      console.warn(`[thinkJSON] Model ${activeModelName} failed (${primaryErr.message}), retrying with fallback ${altModel}...`);
+      activeModelName = altModel;
+      const model = getGeminiModel(activeModelName);
+      result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature,
+        },
+      });
+    }
 
     const response = await result.response;
     const rawText = response.text();
     const cleanedText = cleanJsonOutput(rawText);
 
-    const parsedJson = JSON.parse(cleanedText);
-    const validatedData = schema.parse(parsedJson);
+    let parsedJson = JSON.parse(cleanedText);
+
+    // If output is wrapped in data/result/campaign, attempt unwrapping if direct parse fails
+    let validatedData: T;
+    const directParsed = schema.safeParse(parsedJson);
+    if (directParsed.success) {
+      validatedData = directParsed.data;
+    } else if (parsedJson.data && schema.safeParse(parsedJson.data).success) {
+      validatedData = schema.parse(parsedJson.data);
+    } else if (parsedJson.result && schema.safeParse(parsedJson.result).success) {
+      validatedData = schema.parse(parsedJson.result);
+    } else if (parsedJson.campaign && schema.safeParse(parsedJson.campaign).success) {
+      validatedData = schema.parse(parsedJson.campaign);
+    } else {
+      validatedData = schema.parse(parsedJson);
+    }
 
     const latencyMs = Date.now() - startTime;
     const usage = response.usageMetadata;
@@ -83,7 +113,7 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
     await logAiRun({
       userId,
       feature: featureName,
-      model: modelName,
+      model: activeModelName,
       latencyMs,
       success: true,
       tokensIn,
@@ -97,7 +127,7 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
         tokensOut,
         totalTokens,
         latencyMs,
-        model: modelName,
+        model: activeModelName,
       },
     };
   } catch (err: any) {
@@ -106,7 +136,7 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
     await logAiRun({
       userId,
       feature: featureName,
-      model: modelName,
+      model: activeModelName,
       latencyMs,
       success: false,
       tokensIn,

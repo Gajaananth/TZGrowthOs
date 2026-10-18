@@ -1,7 +1,9 @@
 import { Router, Response } from 'express';
+import { z } from 'zod';
 import { getPool } from '../db/connection.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { getApproachingFestivals } from '../lib/scoring.js';
+import { thinkJSON } from '../services/ai/thinkJSON.js';
 
 const router = Router();
 
@@ -80,52 +82,115 @@ router.get('/plan', authenticate, async (req: AuthRequest, res: Response): Promi
       [business.id]
     );
 
-    // 6. Generate 3 prioritized actions for today
-    const nextActions: Array<{ id: string; category: string; title: string; description: string; actionUrl: string }> = [];
+    // 6. Generate prioritized actions for today using Gemini AI if available
+    let nextActions: Array<{ id: string; category: string; title: string; description: string; actionUrl: string }> = [];
 
-    if (topPromote.length > 0) {
-      const topP = topPromote[0];
-      nextActions.push({
-        id: 'action-promote-top',
-        category: 'Promotion',
-        title: `Promote Top Margin Hero: ${topP.product_name}`,
-        description: `Ranked #1 with score ${topP.score}/100. High profit potential for ${business.name}.`,
-        actionUrl: `/campaigns/new?productId=${topP.product_id}`,
-      });
-    } else {
-      nextActions.push({
-        id: 'action-generate-priorities',
-        category: 'Analysis',
-        title: 'Run AI Product Priority Scoring',
-        description: 'Compute mathematical priority scores across margins and stock velocity.',
-        actionUrl: '/priorities',
-      });
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const topProdNames = sortedPriorities.slice(0, 3).map(p => `${p.product_name} (${p.priority}, Margin: ${p.score}/100)`).join(', ');
+        const festNames = approachingFestivals.slice(0, 2).map(f => `${f.name_en} (in ${f.days_until} days, boosts: ${(f.categories_boosted || []).join(', ')})`).join('; ');
+        const stockAlerts = inventoryAlertsRes.rows.slice(0, 2).map(r => `${r.name} (${r.stock_qty} left)`).join(', ');
+
+        const aiActions = await thinkJSON<{
+          nextActions: Array<{ category: string; title: string; description: string; actionUrl?: string }>
+        }>({
+          prompt: `You are the GrowthOS Chief Strategy Officer advising "${business.name}" in ${business.city || 'Sri Lanka'}.
+Store Context:
+- Priority Scored Items: ${topProdNames || 'None yet'}
+- Upcoming Festivals: ${festNames || 'None in immediate window'}
+- Low Stock Alerts: ${stockAlerts || 'None'}
+- Total Products: ${catalogSummaryRes.rows[0]?.total_products || 0}
+
+Generate 3 high-impact, tactical actions this retailer must execute today.
+For actionUrl, choose the best matching app route:
+- To create a campaign for a product: "/campaigns/new"
+- To score or review product margins: "/priorities"
+- To manage stock or catalog: "/products"
+- To review holidays: "/festivals"
+- To consult the AI strategist: "/chat"
+
+Return strictly JSON matching:
+{
+  "nextActions": [
+    {
+      "category": "Promotion | Inventory | Cultural Calendar | Analysis",
+      "title": "Concise actionable title",
+      "description": "1-2 sentences with concrete reasoning grounded in the store's data",
+      "actionUrl": "/campaigns/new"
+    }
+  ]
+}`,
+          schema: z.object({
+            nextActions: z.array(z.object({
+              id: z.string().optional().default(() => 'act_' + Math.random().toString(36).substring(2, 7)),
+              category: z.string(),
+              title: z.string(),
+              description: z.string(),
+              actionUrl: z.string().optional().default('/campaigns/new'),
+            })).min(1).transform(a => a.slice(0, 3)),
+          }),
+          featureName: 'growth_plan_strategist',
+          userId: req.user!.userId,
+          temperature: 0.5,
+        });
+
+        nextActions = aiActions.nextActions.map((a, idx) => ({
+          id: a.id || `ai_act_${idx}`,
+          category: a.category,
+          title: a.title,
+          description: a.description,
+          actionUrl: a.actionUrl || '/campaigns/new',
+        }));
+      } catch (aiErr: any) {
+        console.warn('[Strategist] Gemini plan generation failed, using structured fallback:', aiErr.message);
+      }
     }
 
-    if (approachingFestivals.length > 0) {
-      const topFest = approachingFestivals[0];
-      nextActions.push({
-        id: 'action-festival-prep',
-        category: 'Cultural Calendar',
-        title: `Prepare for ${topFest.name_en}`,
-        description: topFest.date_confirmed
-          ? `Confirmed date approaching in ${topFest.days_until} days. Boost categories: ${(topFest.categories_boosted || []).slice(0, 3).join(', ')}.`
-          : `Date requires verification. Confirm official holiday date in festival settings.`,
-        actionUrl: '/festivals',
-      });
-    }
+    if (nextActions.length === 0) {
+      if (topPromote.length > 0) {
+        const topP = topPromote[0];
+        nextActions.push({
+          id: 'action-promote-top',
+          category: 'Promotion',
+          title: `Promote Top Margin Hero: ${topP.product_name}`,
+          description: `Ranked #1 with score ${topP.score}/100. High profit potential for ${business.name}.`,
+          actionUrl: `/campaigns/new?productId=${topP.product_id}`,
+        });
+      } else {
+        nextActions.push({
+          id: 'action-generate-priorities',
+          category: 'Analysis',
+          title: 'Run AI Product Priority Scoring',
+          description: 'Compute mathematical priority scores across margins and stock velocity.',
+          actionUrl: '/priorities',
+        });
+      }
 
-    if (inventoryAlertsRes.rows.length > 0) {
-      const lowest = inventoryAlertsRes.rows[0];
-      nextActions.push({
-        id: 'action-stock-alert',
-        category: 'Inventory',
-        title: `Restock Warning: ${lowest.name}`,
-        description: lowest.stock_qty <= 0
-          ? `Currently out of stock! Restock immediately to prevent lost retail revenue.`
-          : `Only ${lowest.stock_qty} units remaining. Contact supplier before running promotions.`,
-        actionUrl: '/products',
-      });
+      if (approachingFestivals.length > 0) {
+        const topFest = approachingFestivals[0];
+        nextActions.push({
+          id: 'action-festival-prep',
+          category: 'Cultural Calendar',
+          title: `Prepare for ${topFest.name_en}`,
+          description: topFest.date_confirmed
+            ? `Confirmed date approaching in ${topFest.days_until} days. Boost categories: ${(topFest.categories_boosted || []).slice(0, 3).join(', ')}.`
+            : `Date requires verification. Confirm official holiday date in festival settings.`,
+          actionUrl: '/festivals',
+        });
+      }
+
+      if (inventoryAlertsRes.rows.length > 0) {
+        const lowest = inventoryAlertsRes.rows[0];
+        nextActions.push({
+          id: 'action-stock-alert',
+          category: 'Inventory',
+          title: `Restock Warning: ${lowest.name}`,
+          description: lowest.stock_qty <= 0
+            ? `Currently out of stock! Restock immediately to prevent lost retail revenue.`
+            : `Only ${lowest.stock_qty} units remaining. Contact supplier before running promotions.`,
+          actionUrl: '/products',
+        });
+      }
     }
 
     res.json({

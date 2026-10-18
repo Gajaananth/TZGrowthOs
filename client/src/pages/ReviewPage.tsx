@@ -76,6 +76,27 @@ const LanguageTabs: React.FC<{ assets: ContentAsset[]; campaignStatus: CampaignS
   const imgPmpt  = assets.find(a => a.asset_type === 'IMAGE_PROMPT');
   const isApproved = campaignStatus === 'APPROVED';
 
+  const handleDownloadCopyPack = () => {
+    const lines: string[] = [
+      `=== TRADIQ ZIUM GROWTHOS CAMPAIGN COPY PACK ===`,
+      `Generated via Google Gemini AI`,
+      `Date: ${new Date().toLocaleDateString()}`,
+      `===============================================\n`,
+    ];
+    assets.forEach((a) => {
+      lines.push(`--- [${a.asset_type}] Language: ${a.language} ---`);
+      lines.push(a.body);
+      lines.push('');
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `campaign_copy_pack.txt`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (captions.length === 0) return <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No captions generated yet.</p>;
 
 
@@ -212,23 +233,36 @@ const LanguageTabs: React.FC<{ assets: ContentAsset[]; campaignStatus: CampaignS
               padding: '1rem',
               position: 'relative'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
                 <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#166534', letterSpacing: '0.05em' }}>
                   🎨 POSTER & BANNER CONCEPT (PRINT-READY)
                 </span>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  style={{
-                    padding: '0.25rem 0.5rem', borderRadius: '0.375rem',
-                    background: '#16a34a', color: 'white', border: 'none',
-                    fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer'
-                  }}
-                >
-                  🖶️ Print / Save PDF
-                </button>
+                <div style={{ display: 'flex', gap: '0.35rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleDownloadCopyPack}
+                    style={{
+                      padding: '0.25rem 0.5rem', borderRadius: '0.375rem',
+                      background: '#ffffff', color: '#166534', border: '1px solid #86efac',
+                      fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer'
+                    }}
+                  >
+                    📥 Copy Pack (.txt)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    style={{
+                      padding: '0.25rem 0.5rem', borderRadius: '0.375rem',
+                      background: '#16a34a', color: 'white', border: 'none',
+                      fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer'
+                    }}
+                  >
+                    🖶️ Print / Save PDF
+                  </button>
+                </div>
               </div>
-              <div style={{
+              <div className="printable-poster" style={{
                 background: 'white',
                 border: '2px solid #166534',
                 borderRadius: '0.5rem',

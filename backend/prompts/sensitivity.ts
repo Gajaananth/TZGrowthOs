@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 export const SensitivityReviewSchema = z.object({
   passed: z.boolean(),
-  flags: z.array(z.string()),
-  suggestions: z.array(z.string()),
-  overall_verdict: z.string(),
+  flags: z.array(z.string()).optional().default([]),
+  suggestions: z.array(z.string()).optional().default([]),
+  overall_verdict: z.string().optional().default('Approved for local publication.'),
 });
 
 export type SensitivityReviewOutput = z.infer<typeof SensitivityReviewSchema>;
@@ -46,6 +46,12 @@ Checks to perform:
 3. Ramadan/Eid Appropriateness: Verify respect for fasting times vs Eid celebration.
 4. Commercial Tone: Friendly and celebratory, without exploitative or misleading claims.
 
-Return strictly in the requested JSON structure.
+Return strictly matching this JSON schema:
+{
+  "passed": true,
+  "flags": [],
+  "suggestions": ["Helpful suggestion or best practice"],
+  "overall_verdict": "Clear 1-sentence cultural approval verdict"
+}
 `;
 }

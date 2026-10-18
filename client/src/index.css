@@ -401,3 +401,34 @@ body {
     min-height: 42px;
   }
 }
+
+/* Print Stylesheet for Campaign Posters and PDF Export */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  aside, .sidebar, nav, header, .app-header, .no-print, button, .btn {
+    display: none !important;
+  }
+  .page-container, .main-content, #root {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .printable-poster {
+    border: 2px solid #166534 !important;
+    border-radius: 0.5rem !important;
+    padding: 1.5rem !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}
+
+.print-only {
+  display: none;
+}

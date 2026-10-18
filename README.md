@@ -40,7 +40,7 @@ Small and medium retailers in Sri Lanka face distinct challenges:
                 │                            │
                 ▼                            ▼
   ┌──────────────────────────┐  ┌──────────────────────────┐
-  │    PostgreSQL Database   │  │   Google Gemini 2.5      │
+  │    PostgreSQL Database   │  │   Google Gemini 3.8/3.5  │
   │   13 Normalized Tables   │  │    (via @google/         │
   │   Auto-migrated schema   │  │    generative-ai SDK)    │
   │  (Products, Campaigns,   │  │   • thinkJSON validated  │

@@ -3,13 +3,18 @@ import { ScoringResult } from '../lib/scoring.js';
 
 export const PriorityReasoningItemSchema = z.object({
   product_id: z.string(),
-  reasons: z.array(z.string()).min(1).max(3),
-  recommended_action: z.string(),
+  reasons: z.array(z.string()).min(1).transform(r => r.slice(0, 3)),
+  recommended_action: z.string().optional().default('Highlight in upcoming promotional campaign'),
 });
 
-export const PriorityReasoningResponseSchema = z.object({
+export const PriorityReasoningResponseSchema = z.preprocess((val: any) => {
+  if (Array.isArray(val)) return { items: val };
+  if (val && typeof val === 'object' && Array.isArray(val.items)) return val;
+  if (val && typeof val === 'object' && Array.isArray(val.products)) return { items: val.products };
+  return val;
+}, z.object({
   items: z.array(PriorityReasoningItemSchema),
-});
+}));
 
 export type PriorityReasoningResponse = z.infer<typeof PriorityReasoningResponseSchema>;
 
@@ -56,6 +61,15 @@ CRITICAL INSTRUCTIONS:
 Products and Deterministic Scores:
 ${JSON.stringify(productDataFormatted, null, 2)}
 
-Return your analysis strictly matching the requested JSON schema.
+Return your analysis strictly matching this JSON schema:
+{
+  "items": [
+    {
+      "product_id": "product uuid string",
+      "reasons": ["commercial reason 1 grounded in margin or stock", "commercial reason 2 grounded in local seasonal context"],
+      "recommended_action": "concrete marketing or operational next step"
+    }
+  ]
+}
 `;
 }
