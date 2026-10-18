@@ -51,7 +51,7 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
     temperature = 0.2,
   } = options;
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
   const startTime = Date.now();
   let activeModelName = modelName;
 
@@ -68,7 +68,7 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
         },
       });
     } catch (primaryErr: any) {
-      const altModel = activeModelName === 'gemini-2.5-flash' ? 'gemini-2.0-flash' : 'gemini-2.5-flash';
+      const altModel = activeModelName === 'gemini-3.8-flash' ? 'gemini-3.5-flash' : 'gemini-3.8-flash';
       console.warn(`[thinkJSON] Model ${activeModelName} failed (${primaryErr.message}), retrying with fallback ${altModel}...`);
       activeModelName = altModel;
       const model = getGeminiModel(activeModelName);

@@ -17,7 +17,7 @@ export function getGeminiClient(): GoogleGenerativeAI {
 
 export function getGeminiModel(customModelName?: string): GenerativeModel {
   const client = getGeminiClient();
-  const modelName = customModelName || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const modelName = customModelName || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
   return client.getGenerativeModel({ model: modelName });
 }
 
