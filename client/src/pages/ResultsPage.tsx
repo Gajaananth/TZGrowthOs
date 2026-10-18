@@ -16,31 +16,38 @@ const formatLKR = (val: number) => {
 export const ResultsPage: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<InsightsSummary | null>(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_insights_summary');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+  const [loading, setLoading] = useState<boolean>(() => !sessionStorage.getItem('tz_insights_summary'));
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [data, setData] = useState<InsightsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tokenModalOpen, setTokenModalOpen] = useState<boolean>(false);
 
-
   const loadData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
+    if (isRefresh || data) setRefreshing(true);
     else setLoading(true);
     setError(null);
     try {
       const res = await fetchInsightsSummary();
       if (res.success && res.summary) {
         setData(res.summary);
+        try {
+          sessionStorage.setItem('tz_insights_summary', JSON.stringify(res.summary));
+        } catch { /* ignore */ }
       } else {
-        setError(res.error || 'Failed to load insights summary');
+        if (!data) setError(res.error || 'Failed to load insights summary');
       }
     } catch (err: any) {
-      setError(err.message || 'Error connecting to analytics service');
+      if (!data) setError(err.message || 'Error connecting to analytics service');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     loadData();
@@ -536,7 +543,7 @@ export const ResultsPage: React.FC = () => {
                   Gemini AI Engine & Token Telemetry
                 </h2>
                 <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
-                  gemini-3.5-flash
+                  gemini-3.8-flash
                 </span>
               </div>
               <p style={{ fontSize: '0.78rem', color: '#15803d', margin: '0.15rem 0 0' }}>

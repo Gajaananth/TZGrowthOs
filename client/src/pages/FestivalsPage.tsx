@@ -21,8 +21,13 @@ import { useI18n } from '../context/I18nContext';
 
 export const FestivalsPage: React.FC = () => {
   const { t } = useI18n();
-  const [festivals, setFestivals] = useState<Festival[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [festivals, setFestivals] = useState<Festival[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_festivals');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => !sessionStorage.getItem('tz_festivals'));
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Edit / Confirm modal
@@ -31,11 +36,13 @@ export const FestivalsPage: React.FC = () => {
   const [modalLeadDays, setModalLeadDays] = useState('14');
 
   const loadFestivals = async () => {
-    setLoading(true);
     try {
       const res = await fetchFestivals();
       if (res.success && res.festivals) {
         setFestivals(res.festivals);
+        try {
+          sessionStorage.setItem('tz_festivals', JSON.stringify(res.festivals));
+        } catch { /* ignore */ }
       }
     } catch (err: any) {
       console.error('Failed to load festivals:', err);

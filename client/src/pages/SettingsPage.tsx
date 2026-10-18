@@ -366,7 +366,7 @@ export const SettingsPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.82rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--border-light)' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Foundational LLM</span>
-                <strong>Google Gemini 3.8 / 3.5 Flash</strong>
+                <strong>Google Gemini 3.8 Flash</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--border-light)' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Output Format</span>

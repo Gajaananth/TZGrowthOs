@@ -189,7 +189,7 @@ export const Sidebar: React.FC = () => {
               {user?.email || 'Retailer'}
             </div>
             <div style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 500 }}>
-              Gemini 3.5 Flash Active
+              Gemini 3.8 Flash Active
             </div>
           </div>
           <button

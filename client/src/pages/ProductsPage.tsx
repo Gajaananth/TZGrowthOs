@@ -30,12 +30,16 @@ import { useI18n } from '../context/I18nContext';
 
 export const ProductsPage: React.FC = () => {
   const { t } = useI18n();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_products');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => !sessionStorage.getItem('tz_products'));
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -57,11 +61,13 @@ export const ProductsPage: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
 
   const loadProducts = async () => {
-    setLoading(true);
     try {
       const res = await fetchProducts();
       if (res.success && res.products) {
         setProducts(res.products);
+        try {
+          sessionStorage.setItem('tz_products', JSON.stringify(res.products));
+        } catch { /* ignore */ }
       }
     } catch (err: any) {
       console.error('Failed to load products:', err);

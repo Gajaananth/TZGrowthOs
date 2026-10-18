@@ -426,7 +426,7 @@ export const TokenTelemetryModal: React.FC<TokenTelemetryModalProps> = ({ isOpen
                           {new Date(run.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </td>
                         <td style={{ fontWeight: 600 }}>{formatFeatureName(run.feature)}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{run.model || 'gemini-3.5-flash'}</td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{run.model || 'gemini-3.8-flash'}</td>
                         <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{(run.tokens_in || 0).toLocaleString()}</td>
                         <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{(run.tokens_out || 0).toLocaleString()}</td>
                         <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--primary-700)' }}>

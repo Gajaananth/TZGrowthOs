@@ -45,10 +45,25 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [business, setBusiness] = useState<Business | null>(null);
   const [token, setTokenState] = useState<string | null>(getToken());
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('growthos_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+  const [business, setBusiness] = useState<Business | null>(() => {
+    try {
+      const saved = localStorage.getItem('growthos_business');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+  // If we already have a cached token + user, start with isLoading = false immediately!
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const t = getToken();
+    const u = localStorage.getItem('growthos_user');
+    return Boolean(t && !u);
+  });
 
   const refreshProfile = async () => {
     const currentToken = getToken();
@@ -64,18 +79,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.success && res.user) {
         setUser(res.user);
         setBusiness(res.business || null);
-      } else {
+        localStorage.setItem('growthos_user', JSON.stringify(res.user));
+        if (res.business) {
+          localStorage.setItem('growthos_business', JSON.stringify(res.business));
+        }
+      } else if (res.error?.includes('401') || res.error?.includes('Unauthorized')) {
+        // Only wipe on true 401
         removeToken();
         setUser(null);
         setBusiness(null);
         setTokenState(null);
       }
     } catch (err) {
-      console.error('Failed to restore session:', err);
-      removeToken();
-      setUser(null);
-      setBusiness(null);
-      setTokenState(null);
+      console.error('Session refresh warning:', err);
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +110,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTokenState(res.token);
         setUser(res.user);
         setBusiness(res.business || null);
+        localStorage.setItem('growthos_user', JSON.stringify(res.user));
+        if (res.business) {
+          localStorage.setItem('growthos_business', JSON.stringify(res.business));
+        }
         return { success: true };
       }
       return { success: false, error: res.error || 'Login failed' };
@@ -119,6 +139,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTokenState(res.token);
         setUser(res.user);
         setBusiness(res.business || null);
+        localStorage.setItem('growthos_user', JSON.stringify(res.user));
+        if (res.business) {
+          localStorage.setItem('growthos_business', JSON.stringify(res.business));
+        }
         return { success: true };
       }
       return { success: false, error: res.error || 'Registration failed' };

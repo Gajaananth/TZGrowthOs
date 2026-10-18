@@ -22,21 +22,27 @@ import { useI18n } from '../context/I18nContext';
 
 export const PrioritiesPage: React.FC = () => {
   const { t } = useI18n();
-  const [priorities, setPriorities] = useState<PriorityItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [priorities, setPriorities] = useState<PriorityItem[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_priorities');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => !sessionStorage.getItem('tz_priorities'));
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'PROMOTE_MORE' | 'MAINTAIN' | 'REDUCE'>('ALL');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const navigate = useNavigate();
 
-
   const loadPriorities = async () => {
-    setLoading(true);
     try {
       const res = await fetchPriorities();
       if (res.success && res.priorities) {
         setPriorities(res.priorities);
+        try {
+          sessionStorage.setItem('tz_priorities', JSON.stringify(res.priorities));
+        } catch { /* ignore */ }
       }
     } catch (err: any) {
       console.error('Failed to load priorities:', err);

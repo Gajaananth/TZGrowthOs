@@ -23,17 +23,24 @@ export const GrowthPlanPage: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
 
-  const [plan, setPlan] = useState<GrowthPlan | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState<GrowthPlan | null>(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_growth_plan');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+  const [loading, setLoading] = useState(!sessionStorage.getItem('tz_growth_plan'));
   const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     async function loadPlan() {
-      setLoading(true);
       try {
         const res = await fetchGrowthPlan();
         if (res.success && res.plan) {
           setPlan(res.plan);
+          try {
+            sessionStorage.setItem('tz_growth_plan', JSON.stringify(res.plan));
+          } catch { /* ignore */ }
         }
       } catch (err) {
         console.error('Failed to load growth plan:', err);

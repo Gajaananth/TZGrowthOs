@@ -637,27 +637,34 @@ const Globe = ({ size, color }: { size: number; color?: string }) => (
 // ─── Main ReviewPage ──────────────────────────────────────────
 export const ReviewPage: React.FC = () => {
   const { t } = useI18n();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_campaigns');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => !sessionStorage.getItem('tz_campaigns'));
   const [filterStatus, setFilterStatus] = useState<CampaignStatus | 'ALL'>('ALL');
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    setLoading(true);
     setError('');
     try {
       const res = await fetchCampaigns();
-      if (res.success) {
-        setCampaigns(res.campaigns || []);
+      if (res.success && res.campaigns) {
+        setCampaigns(res.campaigns);
+        try {
+          sessionStorage.setItem('tz_campaigns', JSON.stringify(res.campaigns));
+        } catch { /* ignore */ }
       } else {
-        setError(res.error || 'Failed to load campaigns');
+        if (!campaigns.length) setError(res.error || 'Failed to load campaigns');
       }
     } catch (e: any) {
-      setError(e.message);
+      if (!campaigns.length) setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [campaigns.length]);
 
   useEffect(() => { load(); }, [load]);
 

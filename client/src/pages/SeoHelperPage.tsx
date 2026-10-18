@@ -182,7 +182,7 @@ const SeoResultPanel: React.FC<{ productName: string; seo: SeoOutput; aiMeta?: a
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.75rem' }}>
             <span>⚡ Latency: <strong>{aiMeta.latencyMs}ms</strong></span>
             <span className="badge badge-green" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>
-              {aiMeta.model || 'gemini-3.5-flash'}
+              {aiMeta.model || 'gemini-3.8-flash'}
             </span>
           </div>
         </div>
@@ -471,20 +471,36 @@ const SeoResultPanel: React.FC<{ productName: string; seo: SeoOutput; aiMeta?: a
 
 // ─── Main Page ────────────────────────────────────────────────
 export const SeoHelperPage: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedId, setSelectedId] = useState('');
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_products');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+  const [selectedId, setSelectedId] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('tz_products');
+      const list = cached ? JSON.parse(cached) : [];
+      return list[0]?.id || '';
+    } catch { return ''; }
+  });
   const [loading, setLoading] = useState(false);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(() => !sessionStorage.getItem('tz_products'));
   const [result, setResult] = useState<{ productName: string; seo: SeoOutput; aiMeta?: any } | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchProducts().then(r => {
-      setProducts(r.products || []);
-      setLoadingProducts(false);
-      if (r.products && r.products.length > 0 && !selectedId) {
-        setSelectedId(r.products[0].id);
+      if (r.products) {
+        setProducts(r.products);
+        try {
+          sessionStorage.setItem('tz_products', JSON.stringify(r.products));
+        } catch { /* ignore */ }
+        if (r.products.length > 0 && !selectedId) {
+          setSelectedId(r.products[0].id);
+        }
       }
+      setLoadingProducts(false);
     });
   }, []);
 

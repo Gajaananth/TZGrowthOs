@@ -446,7 +446,7 @@ export const ChatPage: React.FC = () => {
                     <span>•</span>
                     <span>{msg.aiMeta.latencyMs}ms</span>
                     <span>•</span>
-                    <span>{msg.aiMeta.model || 'gemini-3.5-flash'}</span>
+                    <span>{msg.aiMeta.model || 'gemini-3.8-flash'}</span>
                   </div>
                 )}
 

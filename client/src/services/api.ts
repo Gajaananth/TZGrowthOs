@@ -49,7 +49,7 @@ export function removeToken(): void {
 
 export async function apiRequest<T = any>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit & { timeoutMs?: number } = {}
 ): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -61,21 +61,39 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  // AI-heavy generation endpoints get 45s, standard endpoints get 15s timeout
+  const isHeavy = endpoint.includes('/chat') || endpoint.includes('/generate') || endpoint.includes('/copy');
+  const timeoutLimit = options.timeoutMs || (isHeavy ? 45000 : 15000);
 
-  const data = await res.json().catch(() => ({
-    success: false,
-    error: `HTTP error ${res.status}: ${res.statusText}`,
-  }));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutLimit);
 
-  if (!res.ok && !data.error) {
-    data.error = `HTTP error ${res.status}: ${res.statusText}`;
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal,
+    });
+    clearTimeout(timer);
+
+    const data = await res.json().catch(() => ({
+      success: false,
+      error: `HTTP error ${res.status}: ${res.statusText}`,
+    }));
+
+    if (!res.ok && !data.error) {
+      data.error = `HTTP error ${res.status}: ${res.statusText}`;
+    }
+
+    return data as T;
+  } catch (err: any) {
+    clearTimeout(timer);
+    const isTimeout = err?.name === 'AbortError';
+    return {
+      success: false,
+      error: isTimeout ? 'Request timed out — server may be warming up' : (err?.message || 'Network request failed'),
+    } as unknown as T;
   }
-
-  return data as T;
 }
 
 // ─── Health API ───────────────────────────────────────────────
@@ -596,10 +614,30 @@ export async function fetchInsightsSummary() {
   );
 }
 
-export async function fetchTokenUsage() {
-  return apiRequest<{ success: boolean; tokens: TokenUsageData; error?: string }>(
+let tokenUsageCache: { data: { success: boolean; tokens: TokenUsageData; error?: string }; expiresAt: number } | null = null;
+let inFlightTokenReq: Promise<{ success: boolean; tokens: TokenUsageData; error?: string }> | null = null;
+
+export async function fetchTokenUsage(force = false) {
+  const now = Date.now();
+  if (!force && tokenUsageCache && tokenUsageCache.expiresAt > now) {
+    return tokenUsageCache.data;
+  }
+  if (inFlightTokenReq) {
+    return inFlightTokenReq;
+  }
+  inFlightTokenReq = apiRequest<{ success: boolean; tokens: TokenUsageData; error?: string }>(
     '/insights/tokens'
-  );
+  ).then((res) => {
+    inFlightTokenReq = null;
+    if (res.success) {
+      tokenUsageCache = { data: res, expiresAt: Date.now() + 10000 }; // 10-sec cache
+    }
+    return res;
+  }).catch((err) => {
+    inFlightTokenReq = null;
+    throw err;
+  });
+  return inFlightTokenReq;
 }
 
 // ─── Phase 5: Chat ────────────────────────────────────────────
