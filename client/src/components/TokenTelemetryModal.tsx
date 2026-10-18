@@ -139,7 +139,7 @@ export const TokenTelemetryModal: React.FC<TokenTelemetryModalProps> = ({ isOpen
                     border: '1px solid rgba(52, 211, 153, 0.4)',
                   }}
                 >
-                  {data?.model || 'gemini-3.5-flash'}
+                  {data?.model || 'gemini-3.8-flash'}
                 </span>
               </div>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: '#a7f3d0' }}>
@@ -283,7 +283,7 @@ export const TokenTelemetryModal: React.FC<TokenTelemetryModalProps> = ({ isOpen
                 {avgLatency} ms
               </div>
               <div style={{ fontSize: '0.72rem', color: '#7e22ce', marginTop: '0.25rem' }}>
-                Fast Gemini 2.0 Flash engine
+                Fast Gemini 3.8 Flash engine
               </div>
             </div>
 
@@ -465,7 +465,7 @@ export const TokenTelemetryModal: React.FC<TokenTelemetryModalProps> = ({ isOpen
           }}
         >
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Gemini 3.5 Flash is included in GrowthOS with ultra-fast sub-second latency.
+            Gemini 3.8 Flash is included in GrowthOS with ultra-fast sub-second latency.
           </div>
           <button
             onClick={onClose}
