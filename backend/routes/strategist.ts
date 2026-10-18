@@ -92,7 +92,7 @@ router.get('/plan', authenticate, async (req: AuthRequest, res: Response): Promi
         const stockAlerts = inventoryAlertsRes.rows.slice(0, 2).map(r => `${r.name} (${r.stock_qty} left)`).join(', ');
 
         const aiActions = await thinkJSON<{
-          nextActions: Array<{ category: string; title: string; description: string; actionUrl?: string }>
+          nextActions: Array<{ id?: string; category: string; title: string; description: string; actionUrl?: string }>
         }>({
           prompt: `You are the GrowthOS Chief Strategy Officer advising "${business.name}" in ${business.city || 'Sri Lanka'}.
 Store Context:

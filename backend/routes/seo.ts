@@ -26,7 +26,7 @@ const KeywordItemSchema = z.object({
   keyword: z.string(),
   trend_badge: z.string().optional().default('TRENDING_NOW'),
   trend_reason: z.string().optional().default('High local intent and search velocity in Sri Lanka'),
-  competition: z.string().optional().default('Medium'),
+  competition: z.string().optional(),
 });
 
 const HashtagItemSchema = z.object({

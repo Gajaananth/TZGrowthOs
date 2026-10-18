@@ -4,7 +4,7 @@ import { getGeminiModel, logAiRun, sanitizeErrorMessage } from './gemini.js';
 export interface ThinkJSONOptions<T> {
   prompt: string;
   systemInstruction?: string;
-  schema: z.ZodType<T>;
+  schema: z.ZodType<T, any, any>;
   featureName: string;
   userId?: string;
   temperature?: number;
