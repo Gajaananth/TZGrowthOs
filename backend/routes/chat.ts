@@ -34,36 +34,38 @@ type ChatResponse = z.infer<typeof ChatResponseSchema>;
 async function buildContext(businessId: string, userId: string) {
   const pool = getPool();
 
-  // Top products with priorities
-  const prodRes = await pool.query(`
-    SELECT DISTINCT ON (pp.product_id)
-      p.name, p.category, p.price_lkr, p.stock_qty,
-      pp.priority, pp.score
-    FROM product_priorities pp
-    JOIN products p ON p.id = pp.product_id
-    WHERE p.business_id = $1
-    ORDER BY pp.product_id, pp.generated_at DESC
-    LIMIT 10`, [businessId]).catch(() => ({ rows: [] }));
+  const [prodRes, festRes, campRes, stockRes] = await Promise.all([
+    // Top products with priorities
+    pool.query(`
+      SELECT DISTINCT ON (pp.product_id)
+        p.name, p.category, p.price_lkr, p.stock_qty,
+        pp.priority, pp.score
+      FROM product_priorities pp
+      JOIN products p ON p.id = pp.product_id
+      WHERE p.business_id = $1
+      ORDER BY pp.product_id, pp.generated_at DESC
+      LIMIT 8`, [businessId]).catch(() => ({ rows: [] })),
 
-  // Approaching festivals
-  const festRes = await pool.query(`
-    SELECT name_en, date, days_until, categories_boosted
-    FROM festivals
-    WHERE date >= CURRENT_DATE
-    ORDER BY date ASC LIMIT 3`).catch(() => ({ rows: [] }));
+    // Approaching festivals
+    pool.query(`
+      SELECT name_en, date, days_until, categories_boosted
+      FROM festivals
+      WHERE date >= CURRENT_DATE
+      ORDER BY date ASC LIMIT 3`).catch(() => ({ rows: [] })),
 
-  // Recent approved campaigns
-  const campRes = await pool.query(`
-    SELECT p.name AS product_name, c.objective, c.platforms, c.approved_at
-    FROM campaigns c JOIN products p ON p.id = c.product_id
-    WHERE c.business_id = $1 AND c.status = 'APPROVED'
-    ORDER BY c.approved_at DESC LIMIT 5`, [businessId]).catch(() => ({ rows: [] }));
+    // Recent approved campaigns
+    pool.query(`
+      SELECT p.name AS product_name, c.objective, c.platforms, c.approved_at
+      FROM campaigns c JOIN products p ON p.id = c.product_id
+      WHERE c.business_id = $1 AND c.status = 'APPROVED'
+      ORDER BY c.approved_at DESC LIMIT 3`, [businessId]).catch(() => ({ rows: [] })),
 
-  // Inventory alerts
-  const stockRes = await pool.query(`
-    SELECT name, stock_qty FROM products
-    WHERE business_id = $1 AND stock_qty <= 5
-    ORDER BY stock_qty ASC LIMIT 5`, [businessId]).catch(() => ({ rows: [] }));
+    // Inventory alerts
+    pool.query(`
+      SELECT name, stock_qty FROM products
+      WHERE business_id = $1 AND stock_qty <= 5
+      ORDER BY stock_qty ASC LIMIT 5`, [businessId]).catch(() => ({ rows: [] })),
+  ]);
 
   return { products: prodRes.rows, festivals: festRes.rows, campaigns: campRes.rows, lowStock: stockRes.rows };
 }
@@ -90,8 +92,8 @@ function buildChatPrompt(
     ? ctx.lowStock.map(p => `- ${p.name}: only ${p.stock_qty} units left`).join('\n')
     : 'No low-stock alerts.';
 
-  const historyText = history.slice(-6)
-    .map(m => `${m.role === 'user' ? 'Retailer' : 'GrowthOS'}: ${m.content}`)
+  const historyText = history.slice(-4)
+    .map(m => `${m.role === 'user' ? 'Retailer' : 'GrowthOS'}: ${m.content.slice(0, 350)}`)
     .join('\n');
 
   return `You are GrowthOS, an AI retail growth strategist for small and medium retailers in Sri Lanka. 

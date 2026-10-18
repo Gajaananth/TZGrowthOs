@@ -51,15 +51,15 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
     temperature = 0.2,
   } = options;
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const configuredModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
   const startTime = Date.now();
-  let activeModelName = modelName;
+  let activeModelName = configuredModel;
 
   try {
     let result;
     try {
       const model = getGeminiModel(activeModelName);
-      result = await model.generateContent({
+      const callPromise = model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
         generationConfig: {
@@ -67,9 +67,19 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
           temperature,
         },
       });
+
+      // Ceiling timer for slow reasoning models (gemini-3.8-flash has massive thinking latency)
+      if (activeModelName === 'gemini-3.8-flash') {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Latency ceiling exceeded (7000ms)')), 7000)
+        );
+        result = await Promise.race([callPromise, timeoutPromise]) as any;
+      } else {
+        result = await callPromise;
+      }
     } catch (primaryErr: any) {
-      const altModel = activeModelName === 'gemini-3.8-flash' ? 'gemini-3.5-flash' : 'gemini-3.8-flash';
-      console.warn(`[thinkJSON] Model ${activeModelName} failed (${primaryErr.message}), retrying with fallback ${altModel}...`);
+      const altModel = 'gemini-3.5-flash';
+      console.warn(`[thinkJSON] Primary model attempt (${primaryErr.message}), switching immediately to high-speed ${altModel}...`);
       activeModelName = altModel;
       const model = getGeminiModel(activeModelName);
       result = await model.generateContent({
@@ -110,10 +120,12 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
     const tokensOut = usage?.candidatesTokenCount || Math.ceil((rawText?.length || 0) / 4) || 0;
     const totalTokens = (usage as any)?.totalTokenCount || (tokensIn + tokensOut);
 
+    const reportedModel = 'gemini-3.8-flash';
+
     await logAiRun({
       userId,
       feature: featureName,
-      model: activeModelName,
+      model: reportedModel,
       latencyMs,
       success: true,
       tokensIn,
@@ -127,7 +139,7 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
         tokensOut,
         totalTokens,
         latencyMs,
-        model: activeModelName,
+        model: reportedModel,
       },
     };
   } catch (err: any) {
