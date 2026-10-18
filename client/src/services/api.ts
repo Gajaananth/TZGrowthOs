@@ -61,9 +61,9 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // AI-heavy generation endpoints get 45s, standard endpoints get 15s timeout
-  const isHeavy = endpoint.includes('/chat') || endpoint.includes('/generate') || endpoint.includes('/copy');
-  const timeoutLimit = options.timeoutMs || (isHeavy ? 45000 : 15000);
+  // AI-heavy generation endpoints get 120s (gemini-3.8-flash can take 80s), standard endpoints get 15s timeout
+  const isHeavy = endpoint.includes('/chat') || endpoint.includes('/generate') || endpoint.includes('/copy') || endpoint.includes('/strategist') || endpoint.includes('/seo');
+  const timeoutLimit = options.timeoutMs || (isHeavy ? 120000 : 15000);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutLimit);

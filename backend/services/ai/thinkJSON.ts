@@ -51,45 +51,58 @@ export async function thinkJSONWithMeta<T>(options: ThinkJSONOptions<T>): Promis
     temperature = 0.2,
   } = options;
 
-  const configuredModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+  // Prefer gemini-3.5-flash for speed; fall back to gemini-3.8-flash if 3.5 is unavailable
+  // When the primary model returns 429 quota or 503 overload, we try the other model once.
+  const fastModel = 'gemini-3.5-flash';
+  const deepModel = 'gemini-3.8-flash';
+  const configuredModel = process.env.GEMINI_MODEL || fastModel;
   const startTime = Date.now();
   let activeModelName = configuredModel;
+
+  const isQuotaError = (msg: string) =>
+    msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota');
+
+  const isOverloadError = (msg: string) =>
+    msg.includes('503') || msg.includes('overloaded') || msg.includes('high demand');
+
+  const callModel = async (modelName: string) => {
+    const model = getGeminiModel(modelName);
+    return model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: systemInstruction
+        ? { role: 'system', parts: [{ text: systemInstruction }] }
+        : undefined,
+      generationConfig: { responseMimeType: 'application/json', temperature },
+    });
+  };
 
   try {
     let result;
     try {
-      const model = getGeminiModel(activeModelName);
-      const callPromise = model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature,
-        },
-      });
-
-      // Ceiling timer for slow reasoning models (gemini-3.8-flash has massive thinking latency)
-      if (activeModelName === 'gemini-3.8-flash') {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Latency ceiling exceeded (7000ms)')), 7000)
-        );
-        result = await Promise.race([callPromise, timeoutPromise]) as any;
-      } else {
-        result = await callPromise;
-      }
+      result = await callModel(activeModelName);
     } catch (primaryErr: any) {
-      const altModel = 'gemini-3.5-flash';
-      console.warn(`[thinkJSON] Primary model attempt (${primaryErr.message}), switching immediately to high-speed ${altModel}...`);
-      activeModelName = altModel;
-      const model = getGeminiModel(activeModelName);
-      result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature,
-        },
-      });
+      const errMsg = primaryErr?.message || '';
+      if (isQuotaError(errMsg)) {
+        // Primary model quota exhausted — try the other model
+        const altModel = activeModelName === fastModel ? deepModel : fastModel;
+        console.warn(`[thinkJSON] ${activeModelName} quota exhausted — switching to ${altModel}`);
+        activeModelName = altModel;
+        result = await callModel(activeModelName);
+      } else if (isOverloadError(errMsg)) {
+        // Overload — retry once after 2s with same model, then try alt model
+        console.warn(`[thinkJSON] ${activeModelName} overloaded — retrying in 2s...`);
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+          result = await callModel(activeModelName);
+        } catch {
+          const altModel = activeModelName === fastModel ? deepModel : fastModel;
+          console.warn(`[thinkJSON] Retry also failed — switching to ${altModel}`);
+          activeModelName = altModel;
+          result = await callModel(activeModelName);
+        }
+      } else {
+        throw primaryErr;
+      }
     }
 
     const response = await result.response;

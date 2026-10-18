@@ -36,3 +36,5 @@ Thumbs.db
 # Project-specific local / legacy directories
 _legacy/
 tmp/
+
+scratch/

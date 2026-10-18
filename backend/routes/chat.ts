@@ -226,7 +226,32 @@ router.post('/message', authenticate, aiLimiter, async (req: AuthRequest, res: R
         response = result.data;
         aiMeta = result.meta;
       } catch (aiErr: any) {
-        console.warn('[Chat] Gemini generation failed, using structured fallback:', aiErr.message);
+        const msg = aiErr?.message || '';
+        const isQuota = msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota');
+        const isOverload = msg.includes('503') || msg.includes('overloaded') || msg.includes('high demand');
+
+        if (isQuota) {
+          console.warn('[Chat] Both Gemini models quota exhausted');
+          res.status(429).json({
+            success: false,
+            error: 'AI quota exhausted — the free tier limit has been reached for today. Please try again in a few hours, or upgrade your Gemini API plan at ai.dev.',
+            retryable: false,
+          });
+          return;
+        }
+
+        if (isOverload) {
+          console.warn('[Chat] Gemini API overloaded');
+          res.status(503).json({
+            success: false,
+            error: 'AI service is temporarily overloaded. Please wait 30 seconds and try again.',
+            retryable: true,
+          });
+          return;
+        }
+
+        // Unknown error — use structured fallback but be honest about it
+        console.warn('[Chat] Gemini generation failed, using structured fallback:', msg);
         response = buildFallbackResponse(question, ctx, business);
         aiMeta = {
           tokensIn: 280,
