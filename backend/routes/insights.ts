@@ -267,7 +267,7 @@ router.get('/tokens', authenticate, async (req: AuthRequest, res: Response): Pro
         avgLatencyMs: stats.avg_latency_ms || 0,
         costUsd: Number(costUsd.toFixed(6)),
         costLkr: Number(costLkr.toFixed(2)),
-        model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
         byFeature: featureRes.rows,
         recentRuns: recentRes.rows,
       },
